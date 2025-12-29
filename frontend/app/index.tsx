@@ -835,9 +835,12 @@ export default function BurgerDropGame() {
       {/* Game Canvas */}
       <View 
         style={styles.gameContainer}
-        {...panResponder.panHandlers}
-        onTouchEnd={handleTouchEnd}
-        onMouseUp={handleTouchEnd}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={onTouchStart}
+        onResponderMove={onTouchMove}
+        onResponderRelease={onTouchEnd}
+        onResponderTerminate={onTouchEnd}
       >
         <Svg 
           style={{
