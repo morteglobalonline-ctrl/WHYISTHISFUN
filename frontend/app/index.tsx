@@ -242,6 +242,15 @@ export default function PattyDisposalGame() {
   const [backgroundBrightness, setBackgroundBrightness] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
   
+  // Mod selection (Item & Target)
+  const [selectedItem, setSelectedItem] = useState<string>('patty');
+  const [selectedTarget, setSelectedTarget] = useState<string>('trashbin');
+  const [showMods, setShowMods] = useState(false);
+  
+  // Get current item and target configs
+  const currentItem = ITEM_CONFIGS.find(i => i.id === selectedItem) || ITEM_CONFIGS[0];
+  const currentTarget = TARGET_CONFIGS.find(t => t.id === selectedTarget) || TARGET_CONFIGS[0];
+  
   // Refs
   const gameLoopRef = useRef<number | null>(null);
   const activePattyRef = useRef<Patty | null>(null);
