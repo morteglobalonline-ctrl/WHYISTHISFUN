@@ -730,7 +730,16 @@ export default function ToiletChaosGame({ onBack }: ToiletChaosProps) {
       {/* Splat overlay */}
       {gameState === 'splat' && (
         <View style={styles.splatOverlay} pointerEvents="box-none">
+          {isNewRecord && (
+            <View style={styles.newRecordBanner}>
+              <MaterialCommunityIcons name="star" size={24} color="#FFD700" />
+              <Text style={styles.newRecordText}>NEW RECORD!</Text>
+              <MaterialCommunityIcons name="star" size={24} color="#FFD700" />
+            </View>
+          )}
           <Text style={styles.splatText}>SPLAT!</Text>
+          <Text style={styles.splatScore}>Pass: {score}</Text>
+          <Text style={styles.bestScore}>Best: {bestPass}</Text>
           <Text style={styles.tapToRetry}>Tap anywhere to retry</Text>
         </View>
       )}
