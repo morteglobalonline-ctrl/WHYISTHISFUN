@@ -16,6 +16,10 @@ import Svg, { Path, Circle, Rect, G, Ellipse, Line, Polygon, Defs, ClipPath, Ima
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Storage key for high score
+const BEST_PASS_KEY = 'toiletChaos_bestPass';
 
 // Physics constants - gentle/relaxed feel
 const GRAVITY = 0.35;
