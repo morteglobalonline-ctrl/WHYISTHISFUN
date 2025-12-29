@@ -795,7 +795,12 @@ export default function BurgerDropGame() {
       {/* Game Canvas */}
       <GestureDetector gesture={panGesture}>
         <View style={styles.gameContainer}>
-          <Svg width={GAME_WIDTH} height={GAME_HEIGHT} style={styles.svg}>
+          <Svg 
+            width="100%" 
+            height="100%" 
+            viewBox={`0 0 ${GAME_WIDTH} ${GAME_HEIGHT}`}
+            style={styles.svg}
+          >
             {/* Drawn shapes */}
             {renderDrawnShapes()}
             
