@@ -363,7 +363,7 @@ export default function PattyDisposalGame() {
 
   // Check trash bin collision
   const checkTrashBinCollision = useCallback((p: Patty): 'inside' | 'side' | 'none' => {
-    const bin = trashBin;
+    const bin = targetPosition;
     const binLeft = bin.x;
     const binRight = bin.x + bin.width;
     const binTop = bin.openingY;
@@ -907,7 +907,7 @@ export default function PattyDisposalGame() {
 
   // Render trash bin
   const renderTrashBin = () => {
-    const bin = trashBin;
+    const bin = targetPosition;
     const binCenterX = bin.x + bin.width / 2;
     
     return (
