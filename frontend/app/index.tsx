@@ -15,8 +15,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DumpItGame from './dumpit';
 import CrazyHeadGame from './crazyhead';
 import ToiletChaosGame from './toiletchaos';
+import FlushItGame from './flushit';
 
-type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos';
+type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos' | 'flushit';
 
 export default function MainMenu() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -33,6 +34,10 @@ export default function MainMenu() {
 
   if (currentScreen === 'toiletchaos') {
     return <ToiletChaosGame onBack={() => setCurrentScreen('menu')} />;
+  }
+
+  if (currentScreen === 'flushit') {
+    return <FlushItGame onBack={() => setCurrentScreen('menu')} />;
   }
 
   // Main Menu
