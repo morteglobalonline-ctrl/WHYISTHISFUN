@@ -264,13 +264,13 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     const dy = p.y - headY;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // Check if hit center (counts as headshot)
-    if (distance < HEAD_CENTER_HITBOX + p.radius * 0.5) {
+    // Check if hit center (counts as headshot) - more forgiving with full item radius
+    if (distance < HEAD_CENTER_HITBOX + p.radius) {
       return 'center';
     }
 
     // Check if hit edge of head (doesn't count)
-    if (distance < HEAD_RADIUS + p.radius * 0.5) {
+    if (distance < HEAD_RADIUS + p.radius * 0.3) {
       return 'edge';
     }
 
