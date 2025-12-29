@@ -12,33 +12,38 @@ import {
   ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import Svg, { Path, Circle, Rect, G, Ellipse, Line, Defs, Marker, Polygon } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, G, Ellipse, Line, Polygon, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 
 // Physics constants
-const GRAVITY = 0.5;
+const GRAVITY = 0.55;
 const AIR_FRICTION = 0.995;
-const GROUND_FRICTION = 0.85;
-const BOUNCE = 0.3;
-const PAN_BOUNCE = 0.4;
-const PATTY_RADIUS = 45; // INCREASED patty size
-const PATTY_HEIGHT = 22; // Patty is elliptical
-const WIN_STABILITY_TIME = 1000; // 1 second
-const SPAWN_DELAY = 1200;
-const STACK_FRICTION = 0.7; // High friction for stacking
-const STACK_DAMPING = 0.92; // Damping when on target
-const MAX_ARROW_LENGTH = 150;
-const LAUNCH_POWER_MULTIPLIER = 0.15;
+const BOUNCE = 0.4;
+const PAN_BOUNCE = 0.5;
+const PATTY_RADIUS = 42;
+const PATTY_HEIGHT = 20;
+const SPAWN_DELAY = 1000;
+const MAX_ARROW_LENGTH = 160;
+const LAUNCH_POWER_MULTIPLIER = 0.18;
 
 // Built-in backgrounds
 const BUILT_IN_BACKGROUNDS = [
   { id: 'kitchen', name: 'Kitchen', color: '#8B5A2B' },
   { id: 'restaurant', name: 'Restaurant', color: '#4A3728' },
-  { id: 'outdoor', name: 'Outdoor BBQ', color: '#2E5A3C' },
-  { id: 'night', name: 'Night Kitchen', color: '#1A1A2E' },
+  { id: 'industrial', name: 'Industrial', color: '#37474F' },
+  { id: 'night', name: 'Night Shift', color: '#1A1A2E' },
+];
+
+// Level configurations
+const LEVEL_CONFIGS = [
+  { requiredPatties: 2, binYOffset: 0 },      // Level 1: bottom
+  { requiredPatties: 3, binYOffset: -50 },    // Level 2: slightly higher
+  { requiredPatties: 4, binYOffset: -100 },   // Level 3: mid-low
+  { requiredPatties: 5, binYOffset: -160 },   // Level 4: mid
+  { requiredPatties: 7, binYOffset: -220 },   // Level 5: high
 ];
 
 interface Point {
@@ -57,9 +62,7 @@ interface Patty {
   rotation: number;
   rotationSpeed: number;
   isOnPan: boolean;
-  isOnTarget: boolean;
-  isStacked: boolean;
-  stableTime: number;
+  isDisposed: boolean;
 }
 
 interface Pan {
@@ -71,25 +74,18 @@ interface Pan {
   vx: number;
 }
 
-interface Target {
+interface TrashBin {
   x: number;
   y: number;
   width: number;
   height: number;
-}
-
-interface Level {
-  id: number;
-  dispenserX: number;
-  dispenserY: number;
-  target: Target;
-  panStartX: number;
-  requiredPatties: number;
+  openingWidth: number;
+  openingY: number;
 }
 
 const TOTAL_LEVELS = 5;
 
-export default function BurgerStackGame() {
+export default function PattyDisposalGame() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const GAME_WIDTH = windowWidth;
   const GAME_HEIGHT = windowHeight;
@@ -97,10 +93,10 @@ export default function BurgerStackGame() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [gameState, setGameState] = useState<'waiting' | 'playing' | 'aiming' | 'win' | 'fail'>('waiting');
   const [activePatty, setActivePatty] = useState<Patty | null>(null);
-  const [stackedPatties, setStackedPatties] = useState<Patty[]>([]);
+  const [disposedCount, setDisposedCount] = useState(0);
   const [pan, setPan] = useState<Pan>({
-    x: GAME_WIDTH / 2,
-    y: GAME_HEIGHT * 0.55,
+    x: GAME_WIDTH * 0.35,
+    y: GAME_HEIGHT * 0.5,
     width: 130,
     height: 28,
     tilt: 0,
@@ -110,11 +106,10 @@ export default function BurgerStackGame() {
   // Aiming system
   const [aimStart, setAimStart] = useState<Point | null>(null);
   const [aimEnd, setAimEnd] = useState<Point | null>(null);
-  const [isAiming, setIsAiming] = useState(false);
   
   // Background settings
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [backgroundColor, setBackgroundColor] = useState('#8B5A2B');
+  const [backgroundColor, setBackgroundColor] = useState('#37474F');
   const [backgroundMode, setBackgroundMode] = useState<'fill' | 'fit'>('fill');
   const [backgroundBrightness, setBackgroundBrightness] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
@@ -122,53 +117,39 @@ export default function BurgerStackGame() {
   // Refs
   const gameLoopRef = useRef<number | null>(null);
   const activePattyRef = useRef<Patty | null>(null);
-  const stackedPattiesRef = useRef<Patty[]>([]);
   const panRef = useRef<Pan>(pan);
   const isDraggingRef = useRef(false);
   const lastTouchXRef = useRef(0);
   const spawnTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const disposedCountRef = useRef(0);
 
-  // Generate level config with varying target positions
-  const getLevelConfig = useCallback((levelIndex: number): Level => {
-    // Target Y position varies by level (higher = harder)
-    const targetYPositions = [
-      GAME_HEIGHT - 140,  // Level 1: bottom
-      GAME_HEIGHT - 180,  // Level 2: slightly higher
-      GAME_HEIGHT - 220,  // Level 3: mid-low
-      GAME_HEIGHT - 280,  // Level 4: mid
-      GAME_HEIGHT - 340,  // Level 5: high
-    ];
+  // Get current level config
+  const levelConfig = LEVEL_CONFIGS[currentLevel] || LEVEL_CONFIGS[0];
+
+  // Calculate trash bin position based on level
+  const getTrashBin = useCallback((): TrashBin => {
+    const baseY = GAME_HEIGHT - 180;
+    const binWidth = 100;
+    const binHeight = 120;
+    const openingWidth = 75;
     
-    const targetXPositions = [
-      GAME_WIDTH * 0.7,
-      GAME_WIDTH * 0.75,
-      GAME_WIDTH * 0.65,
-      GAME_WIDTH * 0.3,
-      GAME_WIDTH * 0.5,
-    ];
-
     return {
-      id: levelIndex + 1,
-      dispenserX: GAME_WIDTH * 0.5,
-      dispenserY: 60,
-      target: {
-        x: targetXPositions[levelIndex] - 55,
-        y: targetYPositions[levelIndex],
-        width: 110,
-        height: 50,
-      },
-      panStartX: GAME_WIDTH * 0.35,
-      requiredPatties: Math.min(2 + levelIndex, 5), // 2, 3, 4, 5, 5 patties per level
+      x: GAME_WIDTH * 0.75 - binWidth / 2,
+      y: baseY + levelConfig.binYOffset,
+      width: binWidth,
+      height: binHeight,
+      openingWidth: openingWidth,
+      openingY: baseY + levelConfig.binYOffset,
     };
-  }, [GAME_WIDTH, GAME_HEIGHT]);
+  }, [GAME_WIDTH, GAME_HEIGHT, levelConfig.binYOffset]);
 
-  const level = getLevelConfig(currentLevel);
+  const trashBin = getTrashBin();
 
-  // Initialize pan position for current level
+  // Initialize pan position
   useEffect(() => {
     const newPan = {
-      x: level.panStartX,
-      y: GAME_HEIGHT * 0.55,
+      x: GAME_WIDTH * 0.35,
+      y: GAME_HEIGHT * 0.5,
       width: 130,
       height: 28,
       tilt: 0,
@@ -176,34 +157,34 @@ export default function BurgerStackGame() {
     };
     setPan(newPan);
     panRef.current = newPan;
-    setStackedPatties([]);
-    stackedPattiesRef.current = [];
-  }, [currentLevel, level.panStartX, GAME_HEIGHT]);
+    setDisposedCount(0);
+    disposedCountRef.current = 0;
+  }, [currentLevel, GAME_WIDTH, GAME_HEIGHT]);
 
   // Spawn patty from dispenser
   const spawnPatty = useCallback(() => {
+    const dispenserX = GAME_WIDTH * 0.5;
+    const dispenserY = 80;
+    
     const newPatty: Patty = {
       id: Date.now().toString(),
-      x: level.dispenserX,
-      y: level.dispenserY + 60,
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: 2,
+      x: dispenserX,
+      y: dispenserY + 60,
+      vx: (Math.random() - 0.5) * 2,
+      vy: 3,
       radius: PATTY_RADIUS,
       height: PATTY_HEIGHT,
       rotation: 0,
-      rotationSpeed: (Math.random() - 0.5) * 0.05,
+      rotationSpeed: (Math.random() - 0.5) * 0.08,
       isOnPan: false,
-      isOnTarget: false,
-      isStacked: false,
-      stableTime: 0,
+      isDisposed: false,
     };
     activePattyRef.current = newPatty;
     setActivePatty(newPatty);
     setGameState('playing');
-    setIsAiming(false);
     setAimStart(null);
     setAimEnd(null);
-  }, [level.dispenserX, level.dispenserY]);
+  }, [GAME_WIDTH]);
 
   // Auto-spawn first patty
   useEffect(() => {
@@ -226,16 +207,13 @@ export default function BurgerStackGame() {
     const panTop = panState.y - panState.height / 2;
     const tiltOffset = panState.tilt * 12;
     
-    // Check horizontal bounds
     if (p.x + p.radius < panLeft || p.x - p.radius > panRight) {
       return { onPan: false, collision: false };
     }
     
-    // Calculate pan surface Y at patty position
     const relativeX = (p.x - panState.x) / (panState.width / 2);
     const panSurfaceY = panTop - tiltOffset * relativeX;
     
-    // Check if patty bottom is touching pan surface
     const pattyBottom = p.y + p.height / 2;
     const distToSurface = pattyBottom - panSurfaceY;
     
@@ -246,41 +224,44 @@ export default function BurgerStackGame() {
     return { onPan: false, collision: false };
   }, []);
 
-  // Check collision with target platform (for stacking)
-  const checkTargetCollision = useCallback((p: Patty, stack: Patty[]): { onTarget: boolean; restY: number } => {
-    const target = level.target;
-    const targetLeft = target.x - 10; // More forgiving left bound
-    const targetRight = target.x + target.width + 10; // More forgiving right bound
-    const targetTop = target.y;
-    const targetCenterX = target.x + target.width / 2;
+  // Check trash bin collision
+  const checkTrashBinCollision = useCallback((p: Patty): 'inside' | 'side' | 'none' => {
+    const bin = trashBin;
+    const binLeft = bin.x;
+    const binRight = bin.x + bin.width;
+    const binTop = bin.openingY;
+    const binBottom = bin.y + bin.height;
+    const openingLeft = bin.x + (bin.width - bin.openingWidth) / 2;
+    const openingRight = openingLeft + bin.openingWidth;
     
-    // Check if patty center is reasonably within target horizontal bounds
-    // Allow patty to overlap edges
-    if (p.x < targetLeft || p.x > targetRight) {
-      return { onTarget: false, restY: 0 };
-    }
+    // Check if patty is inside the bin area
+    const pattyInBinX = p.x > binLeft && p.x < binRight;
+    const pattyInBinY = p.y > binTop && p.y < binBottom;
     
-    // Find the highest point to rest on (target or stacked patties)
-    let highestSurface = targetTop;
-    
-    for (const stacked of stack) {
-      if (stacked.id === p.id) continue;
-      // Check if this patty is roughly above the stacked one
-      const horizontalOverlap = Math.abs(p.x - stacked.x) < p.radius * 1.5;
-      if (horizontalOverlap && stacked.y < highestSurface) {
-        highestSurface = stacked.y - stacked.height * 1.5;
+    if (pattyInBinX && pattyInBinY) {
+      // Check if entered through opening (top)
+      const enteredThroughOpening = p.x > openingLeft + 10 && p.x < openingRight - 10;
+      
+      if (enteredThroughOpening && p.vy > 0) {
+        return 'inside';
       }
     }
     
-    const pattyBottom = p.y + p.height / 2;
+    // Check side collisions
+    const hitLeftWall = p.x + p.radius > binLeft && p.x - p.radius < binLeft + 15 && p.y > binTop && p.y < binBottom;
+    const hitRightWall = p.x - p.radius < binRight && p.x + p.radius > binRight - 15 && p.y > binTop && p.y < binBottom;
+    const hitFrontWall = p.y + p.height > binBottom - 20 && p.y < binBottom && pattyInBinX;
     
-    // More forgiving collision detection
-    if (pattyBottom >= highestSurface - 15) {
-      return { onTarget: true, restY: highestSurface - p.height / 2 };
+    // Check opening rim collision
+    const hitLeftRim = p.x > binLeft && p.x < openingLeft + 15 && p.y + p.height > binTop - 10 && p.y < binTop + 20;
+    const hitRightRim = p.x > openingRight - 15 && p.x < binRight && p.y + p.height > binTop - 10 && p.y < binTop + 20;
+    
+    if (hitLeftWall || hitRightWall || hitFrontWall || hitLeftRim || hitRightRim) {
+      return 'side';
     }
     
-    return { onTarget: false, restY: 0 };
-  }, [level.target]);
+    return 'none';
+  }, [trashBin]);
 
   // Physics update
   const updatePhysics = useCallback(() => {
@@ -288,11 +269,9 @@ export default function BurgerStackGame() {
 
     const p = { ...activePattyRef.current };
     const panState = panRef.current;
-    const stack = stackedPattiesRef.current;
     
     // Skip physics if aiming (patty stays on pan)
     if (gameState === 'aiming' && p.isOnPan) {
-      // Keep patty on pan while aiming
       p.x = panState.x;
       p.y = panState.y - panState.height / 2 - p.height / 2 - 5;
       p.vx = 0;
@@ -318,8 +297,7 @@ export default function BurgerStackGame() {
 
     // Check pan collision
     const panCheck = checkPanCollision(p, panState);
-    if (panCheck.collision && !p.isOnTarget) {
-      // Land on pan
+    if (panCheck.collision && !p.isDisposed) {
       const panTop = panState.y - panState.height / 2;
       const tiltOffset = panState.tilt * 12;
       const relativeX = (p.x - panState.x) / (panState.width / 2);
@@ -327,11 +305,11 @@ export default function BurgerStackGame() {
       
       p.y = panSurfaceY - p.height / 2 - 2;
       p.vy = -Math.abs(p.vy) * PAN_BOUNCE;
-      p.vx += panState.vx * 0.3;
+      p.vx += panState.vx * 0.4;
       p.rotationSpeed += panState.vx * 0.01;
       
       // Check if patty settled on pan
-      if (Math.abs(p.vy) < 2 && Math.abs(p.vx) < 1) {
+      if (Math.abs(p.vy) < 2.5 && Math.abs(p.vx) < 1.5) {
         p.isOnPan = true;
         p.vy = 0;
         p.vx = 0;
@@ -339,67 +317,31 @@ export default function BurgerStackGame() {
       }
     }
 
-    // Check target collision (stacking)
-    const targetCheck = checkTargetCollision(p, stack);
-    if (targetCheck.onTarget) {
-      // Land on target or stack
-      p.y = Math.min(p.y, targetCheck.restY);
-      p.isOnTarget = true;
+    // Check trash bin collision
+    const binCollision = checkTrashBinCollision(p);
+    if (binCollision === 'inside' && !p.isDisposed) {
+      // Success! Patty went in the bin
+      p.isDisposed = true;
+      const newCount = disposedCountRef.current + 1;
+      disposedCountRef.current = newCount;
+      setDisposedCount(newCount);
       
-      // Reduce bounce significantly when landing on target
-      if (p.vy > 0) {
-        p.vy = -Math.abs(p.vy) * BOUNCE * 0.3;
+      // Check win condition
+      if (newCount >= levelConfig.requiredPatties) {
+        handleWin();
+        return;
       }
-      p.vx *= GROUND_FRICTION;
       
-      // Strong damping when on target to help settle
-      p.vy *= STACK_DAMPING;
-      p.vx *= STACK_DAMPING;
-      p.rotationSpeed *= 0.7;
-      
-      // Gradually center patty on target for stability
-      const targetCenterX = level.target.x + level.target.width / 2;
-      const driftToCenter = (targetCenterX - p.x) * 0.01;
-      p.x += driftToCenter;
-      
-      // Check if stable
-      if (Math.abs(p.vy) < 1 && Math.abs(p.vx) < 1) {
-        p.stableTime += 16; // ~60fps
-        
-        // Visual feedback - slow down more when almost stable
-        p.vy *= 0.9;
-        p.vx *= 0.9;
-        
-        if (p.stableTime >= WIN_STABILITY_TIME && !p.isStacked) {
-          // Patty is stacked!
-          p.isStacked = true;
-          p.vx = 0;
-          p.vy = 0;
-          p.rotationSpeed = 0;
-          
-          // Add to stack
-          const newStack = [...stack, p];
-          stackedPattiesRef.current = newStack;
-          setStackedPatties(newStack);
-          
-          // Check win condition
-          if (newStack.length >= level.requiredPatties) {
-            handleWin();
-            return;
-          }
-          
-          // Spawn next patty
-          activePattyRef.current = null;
-          setActivePatty(null);
-          setGameState('waiting');
-          return;
-        }
-      } else {
-        p.stableTime = Math.max(0, p.stableTime - 8); // Slowly decrease if not stable
-      }
-    } else if (!panCheck.onPan) {
-      p.isOnTarget = false;
-      p.stableTime = 0;
+      // Spawn next patty
+      activePattyRef.current = null;
+      setActivePatty(null);
+      setGameState('waiting');
+      return;
+    } else if (binCollision === 'side') {
+      // Bounced off side - this is a fail!
+      p.vx = -p.vx * BOUNCE;
+      p.vy = -p.vy * BOUNCE * 0.5;
+      p.rotationSpeed = -p.rotationSpeed;
     }
 
     // Screen bounds
@@ -417,41 +359,16 @@ export default function BurgerStackGame() {
       handleFail();
       return;
     }
-
-    // Update stacked patties physics (tower wobble)
-    const updatedStack = stack.map(sp => {
-      if (sp.id === p.id) return sp;
-      
-      const newSp = { ...sp };
-      
-      // Apply micro-gravity to check stability
-      newSp.vy += GRAVITY * 0.1;
-      
-      // Check if still on target
-      const spTargetCheck = checkTargetCollision(newSp, stack.filter(s => s.id !== newSp.id));
-      if (spTargetCheck.onTarget) {
-        newSp.y = Math.min(newSp.y + newSp.vy, spTargetCheck.restY);
-        newSp.vy *= 0.5;
-      } else {
-        // Fell off stack!
-        newSp.y += newSp.vy;
-        if (newSp.y > GAME_HEIGHT) {
-          // Remove from stack
-          return null;
-        }
-      }
-      
-      return newSp;
-    }).filter(Boolean) as Patty[];
     
-    if (updatedStack.length !== stack.length) {
-      stackedPattiesRef.current = updatedStack;
-      setStackedPatties(updatedStack);
+    // Patty landed on ground (missed bin) = fail
+    if (p.y + p.height > GAME_HEIGHT - 20 && Math.abs(p.vy) < 2 && !p.isDisposed) {
+      handleFail();
+      return;
     }
 
     activePattyRef.current = p;
     setActivePatty(p);
-  }, [gameState, GAME_WIDTH, GAME_HEIGHT, level, checkPanCollision, checkTargetCollision]);
+  }, [gameState, GAME_WIDTH, GAME_HEIGHT, levelConfig, checkPanCollision, checkTrashBinCollision]);
 
   // Game loop
   useEffect(() => {
@@ -486,21 +403,18 @@ export default function BurgerStackGame() {
       cancelAnimationFrame(gameLoopRef.current);
     }
     setTimeout(() => {
-      // Spawn new patty, keep stack
-      activePattyRef.current = null;
-      setActivePatty(null);
-      setGameState('waiting');
-    }, 1200);
+      restartLevel();
+    }, 1500);
   }, []);
 
   const restartLevel = useCallback(() => {
     setActivePatty(null);
     activePattyRef.current = null;
-    setStackedPatties([]);
-    stackedPattiesRef.current = [];
+    setDisposedCount(0);
+    disposedCountRef.current = 0;
     const newPan = {
-      x: level.panStartX,
-      y: GAME_HEIGHT * 0.55,
+      x: GAME_WIDTH * 0.35,
+      y: GAME_HEIGHT * 0.5,
       width: 130,
       height: 28,
       tilt: 0,
@@ -509,23 +423,23 @@ export default function BurgerStackGame() {
     setPan(newPan);
     panRef.current = newPan;
     setGameState('waiting');
-    setIsAiming(false);
     setAimStart(null);
     setAimEnd(null);
-  }, [level.panStartX, GAME_HEIGHT]);
+  }, [GAME_WIDTH, GAME_HEIGHT]);
 
   const nextLevel = useCallback(() => {
     if (currentLevel < TOTAL_LEVELS - 1) {
       setCurrentLevel(currentLevel + 1);
     } else {
-      setCurrentLevel(0);
+      setCurrentLevel(0); // Loop back
     }
     setActivePatty(null);
     activePattyRef.current = null;
-    setStackedPatties([]);
-    stackedPattiesRef.current = [];
+    setDisposedCount(0);
+    disposedCountRef.current = 0;
     setGameState('waiting');
-    setIsAiming(false);
+    setAimStart(null);
+    setAimEnd(null);
   }, [currentLevel]);
 
   // Launch patty from pan
@@ -535,13 +449,12 @@ export default function BurgerStackGame() {
     const p = { ...activePattyRef.current };
     p.isOnPan = false;
     p.vx = direction.x * power * LAUNCH_POWER_MULTIPLIER;
-    p.vy = direction.y * power * LAUNCH_POWER_MULTIPLIER - 8; // Add upward boost
-    p.rotationSpeed = direction.x * 0.05;
+    p.vy = direction.y * power * LAUNCH_POWER_MULTIPLIER - 6;
+    p.rotationSpeed = direction.x * 0.06;
     
     activePattyRef.current = p;
     setActivePatty(p);
     setGameState('playing');
-    setIsAiming(false);
     setAimStart(null);
     setAimEnd(null);
   }, []);
@@ -552,7 +465,6 @@ export default function BurgerStackGame() {
     const x = touch.locationX ?? touch.pageX ?? touch.clientX ?? 0;
     const y = touch.locationY ?? touch.pageY ?? touch.clientY ?? 0;
     
-    // If patty is on pan, start aiming
     if (gameState === 'aiming' && activePattyRef.current?.isOnPan) {
       setAimStart({ x, y });
       setAimEnd({ x, y });
@@ -560,11 +472,9 @@ export default function BurgerStackGame() {
       return;
     }
     
-    // Otherwise, move pan
     isDraggingRef.current = true;
     lastTouchXRef.current = x;
     
-    // Start game on first touch
     if (gameState === 'waiting') {
       spawnPatty();
     }
@@ -575,13 +485,11 @@ export default function BurgerStackGame() {
     const x = touch.locationX ?? touch.pageX ?? touch.clientX ?? 0;
     const y = touch.locationY ?? touch.pageY ?? touch.clientY ?? 0;
     
-    // If aiming, update aim vector
     if (aimStart && gameState === 'aiming') {
       setAimEnd({ x, y });
       return;
     }
     
-    // Move pan
     if (!isDraggingRef.current) return;
     
     const deltaX = x - lastTouchXRef.current;
@@ -597,13 +505,12 @@ export default function BurgerStackGame() {
   }, [aimStart, gameState, GAME_WIDTH]);
 
   const onTouchEnd = useCallback(() => {
-    // If was aiming, launch
     if (aimStart && aimEnd && gameState === 'aiming') {
       const dx = aimStart.x - aimEnd.x;
       const dy = aimStart.y - aimEnd.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance > 20) {
+      if (distance > 25) {
         const power = Math.min(distance, MAX_ARROW_LENGTH);
         const direction = { x: dx / distance, y: dy / distance };
         launchPatty(direction, power);
@@ -650,7 +557,7 @@ export default function BurgerStackGame() {
     const dy = aimStart.y - aimEnd.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    if (distance < 10) return null;
+    if (distance < 15) return null;
     
     const clampedDistance = Math.min(distance, MAX_ARROW_LENGTH);
     const dirX = dx / distance;
@@ -664,22 +571,22 @@ export default function BurgerStackGame() {
     const endX = startX + dirX * clampedDistance;
     const endY = startY + dirY * clampedDistance;
     
-    // Calculate trajectory points
+    // Trajectory preview
     const trajectoryPoints: Point[] = [];
     const launchVx = dirX * clampedDistance * LAUNCH_POWER_MULTIPLIER;
-    const launchVy = dirY * clampedDistance * LAUNCH_POWER_MULTIPLIER - 8;
+    const launchVy = dirY * clampedDistance * LAUNCH_POWER_MULTIPLIER - 6;
     
     let tx = startX;
     let ty = startY;
     let tvx = launchVx;
     let tvy = launchVy;
     
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 35; i++) {
       trajectoryPoints.push({ x: tx, y: ty });
       tx += tvx;
       ty += tvy;
       tvy += GRAVITY;
-      if (ty > GAME_HEIGHT) break;
+      if (ty > GAME_HEIGHT || tx < 0 || tx > GAME_WIDTH) break;
     }
     
     return {
@@ -690,25 +597,28 @@ export default function BurgerStackGame() {
       power: clampedDistance / MAX_ARROW_LENGTH,
       trajectory: trajectoryPoints,
     };
-  }, [aimStart, aimEnd, gameState, GAME_HEIGHT]);
+  }, [aimStart, aimEnd, gameState, GAME_HEIGHT, GAME_WIDTH]);
 
   // Render patty
-  const renderPatty = (p: Patty, isStacked: boolean = false) => {
-    const baseColor = isStacked 
-      ? `rgb(${160 + Math.random() * 20}, ${80}, ${40})`
-      : `rgb(${150}, ${85}, ${45})`;
+  const renderPatty = () => {
+    if (!activePatty) return null;
+    
+    const p = activePatty;
+    // Spoiled patty - greenish brown
+    const baseColor = '#6B5344';
+    const spoiledTint = 'rgba(80, 100, 60, 0.4)';
     
     return (
-      <G key={p.id} transform={`translate(${p.x}, ${p.y}) rotate(${p.rotation * 180 / Math.PI})`}>
+      <G transform={`translate(${p.x}, ${p.y}) rotate(${p.rotation * 180 / Math.PI})`}>
         {/* Shadow */}
         <Ellipse
           cx={0}
-          cy={p.height + 10}
+          cy={p.height + 12}
           rx={p.radius * 0.85}
-          ry={p.height * 0.5}
-          fill="rgba(0,0,0,0.2)"
+          ry={p.height * 0.6}
+          fill="rgba(0,0,0,0.25)"
         />
-        {/* Patty body - elliptical */}
+        {/* Patty body */}
         <Ellipse
           cx={0}
           cy={0}
@@ -716,49 +626,48 @@ export default function BurgerStackGame() {
           ry={p.height}
           fill={baseColor}
         />
-        {/* Texture spots */}
-        <Ellipse cx={-18} cy={-6} rx={8} ry={5} fill="rgba(90, 50, 30, 0.5)" />
-        <Ellipse cx={15} cy={-3} rx={7} ry={4} fill="rgba(90, 50, 30, 0.5)" />
-        <Ellipse cx={0} cy={8} rx={9} ry={5} fill="rgba(90, 50, 30, 0.4)" />
-        <Ellipse cx={22} cy={5} rx={6} ry={4} fill="rgba(90, 50, 30, 0.4)" />
-        <Ellipse cx={-12} cy={10} rx={7} ry={4} fill="rgba(90, 50, 30, 0.35)" />
+        {/* Spoiled spots */}
+        <Ellipse cx={-15} cy={-5} rx={10} ry={6} fill={spoiledTint} />
+        <Ellipse cx={12} cy={-2} rx={8} ry={5} fill={spoiledTint} />
+        <Ellipse cx={-5} cy={8} rx={12} ry={6} fill={spoiledTint} />
+        <Ellipse cx={20} cy={6} rx={7} ry={4} fill={spoiledTint} />
+        {/* Texture */}
+        <Ellipse cx={-20} cy={-3} rx={6} ry={4} fill="rgba(60, 45, 35, 0.5)" />
+        <Ellipse cx={15} cy={8} rx={5} ry={3} fill="rgba(60, 45, 35, 0.5)" />
+        <Ellipse cx={0} cy={-8} rx={7} ry={4} fill="rgba(60, 45, 35, 0.4)" />
         {/* Highlight */}
-        <Ellipse cx={-12} cy={-10} rx={12} ry={6} fill="rgba(255,255,255,0.12)" />
-        {/* Stable indicator */}
-        {p.stableTime > 500 && (
-          <Circle cx={0} cy={-p.height - 10} r={5} fill="#4CAF50" opacity={0.8} />
-        )}
+        <Ellipse cx={-10} cy={-10} rx={10} ry={5} fill="rgba(255,255,255,0.08)" />
       </G>
     );
   };
 
-  // Render pan (HANDLE ON LEFT SIDE - FIXED)
+  // Render pan (handle on LEFT - correct side)
   const renderPan = () => {
     const tiltAngle = pan.tilt * 10;
     
     return (
       <G transform={`translate(${pan.x}, ${pan.y}) rotate(${tiltAngle})`}>
-        {/* Pan shadow */}
+        {/* Shadow */}
         <Ellipse
           cx={0}
-          cy={pan.height + 8}
-          rx={pan.width / 2 + 8}
-          ry={10}
+          cy={pan.height + 10}
+          rx={pan.width / 2 + 10}
+          ry={12}
           fill="rgba(0,0,0,0.25)"
         />
-        {/* Handle - NOW ON LEFT SIDE */}
+        {/* Handle - LEFT SIDE */}
         <Rect
-          x={-pan.width / 2 - 55}
+          x={-pan.width / 2 - 58}
           y={-10}
-          width={60}
+          width={62}
           height={20}
           rx={10}
           fill="#5D4037"
         />
         <Rect
-          x={-pan.width / 2 - 50}
+          x={-pan.width / 2 - 53}
           y={-6}
-          width={52}
+          width={55}
           height={12}
           rx={6}
           fill="#795548"
@@ -771,7 +680,7 @@ export default function BurgerStackGame() {
           ry={pan.height}
           fill="#3A3A3A"
         />
-        {/* Pan inner surface */}
+        {/* Inner surface */}
         <Ellipse
           cx={0}
           cy={3}
@@ -779,15 +688,15 @@ export default function BurgerStackGame() {
           ry={pan.height - 6}
           fill="#2A2A2A"
         />
-        {/* Pan highlight */}
+        {/* Highlight */}
         <Ellipse
           cx={15}
           cy={-8}
-          rx={30}
-          ry={10}
+          rx={28}
+          ry={9}
           fill="rgba(255,255,255,0.08)"
         />
-        {/* Pan rim */}
+        {/* Rim */}
         <Ellipse
           cx={0}
           cy={-pan.height + 5}
@@ -801,106 +710,154 @@ export default function BurgerStackGame() {
 
   // Render dispenser
   const renderDispenser = () => {
+    const dispenserX = GAME_WIDTH * 0.5;
+    const dispenserY = 60;
+    
     return (
       <G>
         {/* Machine body */}
         <Rect
-          x={level.dispenserX - 55}
-          y={level.dispenserY - 50}
+          x={dispenserX - 55}
+          y={dispenserY - 50}
           width={110}
           height={100}
           rx={14}
-          fill="#E8E8E8"
+          fill="#E0E0E0"
           stroke="#BDBDBD"
           strokeWidth={3}
         />
         {/* Dispenser opening */}
         <Rect
-          x={level.dispenserX - 30}
-          y={level.dispenserY + 40}
-          width={60}
-          height={20}
+          x={dispenserX - 28}
+          y={dispenserY + 40}
+          width={56}
+          height={18}
           fill="#1A1A1A"
         />
-        {/* Machine buttons */}
-        <Circle cx={level.dispenserX - 30} cy={level.dispenserY - 25} r={12} fill="#FF5252" />
-        <Circle cx={level.dispenserX} cy={level.dispenserY - 25} r={12} fill="#4CAF50" />
-        <Circle cx={level.dispenserX + 30} cy={level.dispenserY - 25} r={12} fill="#FFC107" />
-        {/* Display */}
+        {/* Warning label */}
         <Rect
-          x={level.dispenserX - 40}
-          y={level.dispenserY + 5}
+          x={dispenserX - 40}
+          y={dispenserY - 35}
           width={80}
-          height={30}
+          height={25}
           rx={4}
-          fill="#1A237E"
+          fill="#FFC107"
         />
         <Text
-          x={level.dispenserX}
-          y={level.dispenserY + 25}
+          x={dispenserX}
+          y={dispenserY - 18}
           textAnchor="middle"
-          fill="#00E676"
-          fontSize={14}
+          fill="#333"
+          fontSize={11}
           fontWeight="bold"
         >
-          {stackedPatties.length}/{level.requiredPatties}
+          WASTE
         </Text>
+        {/* Status indicator */}
+        <Circle cx={dispenserX - 35} cy={dispenserY + 10} r={8} fill="#F44336" />
+        <Circle cx={dispenserX + 35} cy={dispenserY + 10} r={8} fill="#4CAF50" />
       </G>
     );
   };
 
-  // Render target (bun/plate) - STATIC PLATFORM
-  const renderTarget = () => {
-    const target = level.target;
+  // Render trash bin
+  const renderTrashBin = () => {
+    const bin = trashBin;
+    const binCenterX = bin.x + bin.width / 2;
+    
     return (
       <G>
-        {/* Plate shadow */}
+        {/* Shadow */}
         <Ellipse
-          cx={target.x + target.width / 2}
-          cy={target.y + target.height + 5}
-          rx={target.width / 2 + 15}
-          ry={12}
+          cx={binCenterX}
+          cy={bin.y + bin.height + 5}
+          rx={bin.width / 2 + 10}
+          ry={15}
           fill="rgba(0,0,0,0.2)"
         />
-        {/* Plate */}
-        <Ellipse
-          cx={target.x + target.width / 2}
-          cy={target.y + target.height - 8}
-          rx={target.width / 2 + 12}
-          ry={18}
-          fill="#ECEFF1"
-          stroke="#B0BEC5"
-          strokeWidth={2}
-        />
-        {/* Bun bottom - this is the collision surface */}
-        <Rect
-          x={target.x}
-          y={target.y}
-          width={target.width}
-          height={target.height}
-          rx={12}
-          fill="#D4A574"
-        />
-        {/* Bun top curve */}
-        <Ellipse
-          cx={target.x + target.width / 2}
-          cy={target.y + 5}
-          rx={target.width / 2 - 5}
-          ry={15}
-          fill="#DEB887"
-        />
-        {/* Sesame seeds */}
-        <Ellipse cx={target.x + 25} cy={target.y + 15} rx={6} ry={3} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 55} cy={target.y + 20} rx={6} ry={3} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 85} cy={target.y + 12} rx={6} ry={3} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 40} cy={target.y + 32} rx={6} ry={3} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 72} cy={target.y + 38} rx={6} ry={3} fill="#F5F5DC" />
-        {/* Lettuce hint */}
+        
+        {/* Bin body */}
         <Path
-          d={`M ${target.x + 8} ${target.y + 8} Q ${target.x + 30} ${target.y - 8} ${target.x + 55} ${target.y + 8} Q ${target.x + 80} ${target.y - 8} ${target.x + 102} ${target.y + 8}`}
-          fill="none"
-          stroke="#66BB6A"
-          strokeWidth={5}
+          d={`M ${bin.x + 8} ${bin.openingY + 15}
+              L ${bin.x} ${bin.y + bin.height}
+              L ${bin.x + bin.width} ${bin.y + bin.height}
+              L ${bin.x + bin.width - 8} ${bin.openingY + 15}
+              Z`}
+          fill="#455A64"
+        />
+        
+        {/* Bin front face */}
+        <Rect
+          x={bin.x + 5}
+          y={bin.openingY + 20}
+          width={bin.width - 10}
+          height={bin.height - 25}
+          rx={5}
+          fill="#546E7A"
+        />
+        
+        {/* Recycle symbol area */}
+        <Circle
+          cx={binCenterX}
+          cy={bin.openingY + bin.height / 2 + 10}
+          r={25}
+          fill="#37474F"
+        />
+        
+        {/* Recycle arrows (simplified) */}
+        <G transform={`translate(${binCenterX}, ${bin.openingY + bin.height / 2 + 10})`}>
+          <Path
+            d="M -12 -8 L 0 -18 L 12 -8 L 6 -8 L 0 0 L -6 -8 Z"
+            fill="#4CAF50"
+          />
+          <Path
+            d="M 15 5 L 10 18 L -5 12 L -2 8 L 8 5 L 5 12 Z"
+            fill="#4CAF50"
+            transform="rotate(120)"
+          />
+          <Path
+            d="M 15 5 L 10 18 L -5 12 L -2 8 L 8 5 L 5 12 Z"
+            fill="#4CAF50"
+            transform="rotate(240)"
+          />
+        </G>
+        
+        {/* Bin rim / opening */}
+        <Rect
+          x={bin.x - 5}
+          y={bin.openingY}
+          width={bin.width + 10}
+          height={18}
+          rx={4}
+          fill="#37474F"
+        />
+        
+        {/* Opening hole (where patty goes in) */}
+        <Rect
+          x={bin.x + (bin.width - bin.openingWidth) / 2}
+          y={bin.openingY + 3}
+          width={bin.openingWidth}
+          height={12}
+          rx={3}
+          fill="#1A1A1A"
+        />
+        
+        {/* Rim highlights */}
+        <Rect
+          x={bin.x}
+          y={bin.openingY + 2}
+          width={8}
+          height={14}
+          rx={2}
+          fill="#546E7A"
+        />
+        <Rect
+          x={bin.x + bin.width - 8}
+          y={bin.openingY + 2}
+          width={8}
+          height={14}
+          rx={2}
+          fill="#546E7A"
         />
       </G>
     );
@@ -911,7 +868,7 @@ export default function BurgerStackGame() {
     const arrow = getAimArrow();
     if (!arrow) return null;
     
-    const powerColor = arrow.power < 0.3 ? '#4CAF50' : arrow.power < 0.7 ? '#FFC107' : '#FF5252';
+    const powerColor = arrow.power < 0.3 ? '#4CAF50' : arrow.power < 0.6 ? '#FFC107' : '#FF5722';
     
     return (
       <G>
@@ -923,7 +880,7 @@ export default function BurgerStackGame() {
             cy={point.y}
             r={3}
             fill={powerColor}
-            opacity={1 - i * 0.03}
+            opacity={Math.max(0.1, 1 - i * 0.025)}
           />
         ))}
         {/* Main arrow line */}
@@ -933,29 +890,29 @@ export default function BurgerStackGame() {
           x2={arrow.endX}
           y2={arrow.endY}
           stroke={powerColor}
-          strokeWidth={4}
+          strokeWidth={5}
           strokeLinecap="round"
         />
         {/* Arrow head */}
         <G transform={`translate(${arrow.endX}, ${arrow.endY}) rotate(${Math.atan2(arrow.endY - arrow.startY, arrow.endX - arrow.startX) * 180 / Math.PI})`}>
           <Polygon
-            points="0,0 -15,-8 -15,8"
+            points="0,0 -18,-10 -18,10"
             fill={powerColor}
           />
         </G>
         {/* Power indicator */}
         <Circle
           cx={arrow.startX}
-          cy={arrow.startY - 30}
-          r={15}
-          fill="rgba(0,0,0,0.5)"
+          cy={arrow.startY - 35}
+          r={18}
+          fill="rgba(0,0,0,0.6)"
         />
         <Text
           x={arrow.startX}
-          y={arrow.startY - 26}
+          y={arrow.startY - 30}
           textAnchor="middle"
           fill="white"
-          fontSize={12}
+          fontSize={13}
           fontWeight="bold"
         >
           {Math.round(arrow.power * 100)}%
@@ -982,10 +939,8 @@ export default function BurgerStackGame() {
           </View>
           
           <ScrollView style={styles.settingsScroll}>
-            {/* Background Section */}
             <Text style={styles.sectionTitle}>Background</Text>
             
-            {/* Built-in backgrounds */}
             <View style={styles.backgroundGrid}>
               {BUILT_IN_BACKGROUNDS.map((bg) => (
                 <TouchableOpacity
@@ -1005,7 +960,6 @@ export default function BurgerStackGame() {
               ))}
             </View>
             
-            {/* Upload custom */}
             <TouchableOpacity
               style={styles.uploadButton}
               onPress={pickBackgroundImage}
@@ -1024,7 +978,6 @@ export default function BurgerStackGame() {
               </TouchableOpacity>
             )}
             
-            {/* Fit mode */}
             <Text style={styles.subsectionTitle}>Fit Mode</Text>
             <View style={styles.fitModeRow}>
               <TouchableOpacity
@@ -1041,8 +994,7 @@ export default function BurgerStackGame() {
               </TouchableOpacity>
             </View>
             
-            {/* Brightness */}
-            <Text style={styles.subsectionTitle}>Background Brightness</Text>
+            <Text style={styles.subsectionTitle}>Brightness</Text>
             <View style={styles.sliderRow}>
               <Ionicons name="sunny-outline" size={20} color="#666" />
               <View style={styles.sliderContainer}>
@@ -1071,7 +1023,6 @@ export default function BurgerStackGame() {
               <Ionicons name="sunny" size={24} color="#FFC107" />
             </View>
             
-            {/* Game controls */}
             <Text style={styles.sectionTitle}>Game</Text>
             <TouchableOpacity
               style={styles.gameButton}
@@ -1139,18 +1090,10 @@ export default function BurgerStackGame() {
           height={GAME_HEIGHT} 
           viewBox={`0 0 ${GAME_WIDTH} ${GAME_HEIGHT}`}
         >
-          {/* Game objects */}
           {renderDispenser()}
-          {renderTarget()}
+          {renderTrashBin()}
           {renderPan()}
-          
-          {/* Stacked patties */}
-          {stackedPatties.map(p => renderPatty(p, true))}
-          
-          {/* Active patty */}
-          {activePatty && renderPatty(activePatty, false)}
-          
-          {/* Aim arrow */}
+          {renderPatty()}
           {renderAimArrow()}
         </Svg>
       </View>
@@ -1159,7 +1102,10 @@ export default function BurgerStackGame() {
       <View style={styles.uiOverlay}>
         <View style={styles.levelContainer}>
           <Text style={styles.levelText}>Level {currentLevel + 1}</Text>
-          <Text style={styles.stackText}>{stackedPatties.length}/{level.requiredPatties}</Text>
+          <View style={styles.progressContainer}>
+            <MaterialCommunityIcons name="delete" size={18} color="#4CAF50" />
+            <Text style={styles.progressText}>{disposedCount}/{levelConfig.requiredPatties}</Text>
+          </View>
         </View>
         
         <TouchableOpacity
@@ -1178,34 +1124,36 @@ export default function BurgerStackGame() {
       </View>
 
       {/* Instructions */}
-      {gameState === 'waiting' && stackedPatties.length === 0 && (
+      {gameState === 'waiting' && disposedCount === 0 && (
         <View style={styles.instructionsOverlay} pointerEvents="none">
-          <MaterialCommunityIcons name="pan" size={48} color="white" />
-          <Text style={styles.instructionsText}>Catch & Stack!</Text>
-          <Text style={styles.instructionsSubtext}>Drag pan to catch, then aim & launch</Text>
+          <MaterialCommunityIcons name="delete-empty" size={52} color="white" />
+          <Text style={styles.instructionsText}>Dispose the Waste!</Text>
+          <Text style={styles.instructionsSubtext}>Catch with pan, aim, and toss into bin</Text>
         </View>
       )}
 
       {/* Aiming hint */}
       {gameState === 'aiming' && (
         <View style={styles.aimHint} pointerEvents="none">
-          <Text style={styles.aimHintText}>Drag to aim, release to launch!</Text>
+          <Text style={styles.aimHintText}>Drag to aim → Release to toss!</Text>
         </View>
       )}
 
       {/* Win overlay */}
       {gameState === 'win' && (
         <View style={styles.resultOverlay}>
-          <Text style={styles.winText}>Perfect Stack!</Text>
-          <Text style={styles.resultSubtext}>{level.requiredPatties} patties stacked!</Text>
+          <MaterialCommunityIcons name="check-circle" size={80} color="#4CAF50" />
+          <Text style={styles.winText}>Level Clear!</Text>
+          <Text style={styles.resultSubtext}>{levelConfig.requiredPatties} patties disposed</Text>
         </View>
       )}
       
       {/* Fail overlay */}
       {gameState === 'fail' && (
         <View style={styles.resultOverlay}>
-          <Text style={styles.failText}>Oops!</Text>
-          <Text style={styles.resultSubtext}>Keep trying...</Text>
+          <MaterialCommunityIcons name="emoticon-sad" size={70} color="#FF5722" />
+          <Text style={styles.failText}>Missed!</Text>
+          <Text style={styles.resultSubtext}>Restarting level...</Text>
         </View>
       )}
 
@@ -1247,55 +1195,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   levelContainer: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 18,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 25,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   levelText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
   },
-  stackText: {
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  progressText: {
     color: '#4CAF50',
     fontSize: 16,
     fontWeight: 'bold',
   },
   resetButton: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     padding: 12,
     borderRadius: 25,
     marginLeft: 'auto',
     marginRight: 10,
   },
   settingsButton: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     padding: 12,
     borderRadius: 25,
   },
   instructionsOverlay: {
     position: 'absolute',
-    top: '30%',
+    top: '28%',
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   instructionsText: {
     color: 'white',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginTop: 12,
+    marginTop: 14,
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
   instructionsSubtext: {
     color: 'rgba(255,255,255,0.9)',
-    fontSize: 16,
+    fontSize: 15,
     marginTop: 8,
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 1, height: 1 },
@@ -1310,7 +1263,7 @@ const styles = StyleSheet.create({
   },
   aimHintText: {
     color: '#FFC107',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
@@ -1324,33 +1277,34 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   winText: {
     color: '#4CAF50',
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: 'bold',
+    marginTop: 15,
     textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 6,
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
   failText: {
-    color: '#FF5252',
-    fontSize: 48,
+    color: '#FF5722',
+    fontSize: 42,
     fontWeight: 'bold',
+    marginTop: 15,
     textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 6,
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
   resultSubtext: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 18,
     marginTop: 10,
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
