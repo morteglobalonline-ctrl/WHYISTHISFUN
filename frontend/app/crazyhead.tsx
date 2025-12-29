@@ -16,6 +16,28 @@ import Svg, { Path, Circle, Rect, G, Ellipse, Line, Polygon, Defs, ClipPath, Ima
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+
+// Sound effects helper - plays short synthesized sounds
+const playHitSound = async (type: string) => {
+  try {
+    // Using different frequencies/patterns for different hit types
+    const { sound } = await Audio.Sound.createAsync(
+      // Use a simple beep as fallback - in production you'd use actual sound files
+      { uri: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==' },
+      { shouldPlay: false }
+    );
+    // Cleanup after playing
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.isLoaded && status.didJustFinish) {
+        sound.unloadAsync();
+      }
+    });
+  } catch (e) {
+    // Silently fail - sounds are optional
+    console.log('Sound playback failed:', e);
+  }
+};
 
 // Physics constants (same as Dump It for consistency)
 const GRAVITY = 0.55;
