@@ -136,6 +136,10 @@ const LEVELS: Level[] = [
 ];
 
 export default function BurgerDropGame() {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const GAME_WIDTH = windowWidth;
+  const GAME_HEIGHT = windowHeight;
+  
   const [currentLevel, setCurrentLevel] = useState(0);
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'win' | 'fail'>('ready');
   const [patty, setPatty] = useState<Patty | null>(null);
@@ -152,7 +156,70 @@ export default function BurgerDropGame() {
   const failTimerRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<number>(0);
 
-  const level = LEVELS[currentLevel];
+  // Generate level based on current dimensions
+  const getLevelConfig = useCallback((levelIndex: number): Level => {
+    const configs: Level[] = [
+      {
+        id: 1,
+        dispenserX: GAME_WIDTH * 0.3,
+        dispenserY: 80,
+        target: { x: GAME_WIDTH * 0.6, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        hazards: [],
+        obstacles: [],
+      },
+      {
+        id: 2,
+        dispenserX: GAME_WIDTH * 0.2,
+        dispenserY: 80,
+        target: { x: GAME_WIDTH * 0.7, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        hazards: [
+          { type: 'knife', x: GAME_WIDTH * 0.5, y: GAME_HEIGHT * 0.5, width: 120, height: 30, rotation: -30 },
+        ],
+        obstacles: [],
+      },
+      {
+        id: 3,
+        dispenserX: GAME_WIDTH * 0.5,
+        dispenserY: 80,
+        target: { x: GAME_WIDTH * 0.5, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        hazards: [
+          { type: 'knife', x: GAME_WIDTH * 0.25, y: GAME_HEIGHT * 0.4, width: 100, height: 25, rotation: 45 },
+          { type: 'knife', x: GAME_WIDTH * 0.75, y: GAME_HEIGHT * 0.4, width: 100, height: 25, rotation: -45 },
+        ],
+        obstacles: [
+          { x: GAME_WIDTH * 0.4, y: GAME_HEIGHT * 0.6, width: 80, height: 15 },
+        ],
+      },
+      {
+        id: 4,
+        dispenserX: GAME_WIDTH * 0.8,
+        dispenserY: 80,
+        target: { x: GAME_WIDTH * 0.2, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        hazards: [
+          { type: 'fire', x: GAME_WIDTH * 0.5, y: GAME_HEIGHT * 0.7, width: 80, height: 60 },
+          { type: 'knife', x: GAME_WIDTH * 0.3, y: GAME_HEIGHT * 0.35, width: 100, height: 25, rotation: 20 },
+        ],
+        obstacles: [],
+      },
+      {
+        id: 5,
+        dispenserX: GAME_WIDTH * 0.15,
+        dispenserY: 80,
+        target: { x: GAME_WIDTH * 0.85 - 50, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        hazards: [
+          { type: 'knife', x: GAME_WIDTH * 0.4, y: GAME_HEIGHT * 0.3, width: 110, height: 28, rotation: -15 },
+          { type: 'fire', x: GAME_WIDTH * 0.6, y: GAME_HEIGHT * 0.55, width: 70, height: 55 },
+          { type: 'knife', x: GAME_WIDTH * 0.3, y: GAME_HEIGHT * 0.65, width: 90, height: 22, rotation: 40 },
+        ],
+        obstacles: [
+          { x: GAME_WIDTH * 0.6, y: GAME_HEIGHT * 0.4, width: 70, height: 12 },
+        ],
+      },
+    ];
+    return configs[levelIndex] || configs[0];
+  }, [GAME_WIDTH, GAME_HEIGHT]);
+
+  const level = getLevelConfig(currentLevel);
 
   // Calculate path length
   const calculatePathLength = (points: Point[]): number => {
