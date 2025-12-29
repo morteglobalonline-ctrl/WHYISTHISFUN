@@ -453,47 +453,46 @@ export default function BurgerDropGame() {
     restartLevel();
   };
 
-  // Track current path in a ref for immediate access in PanResponder
+  // Track current path in a ref for immediate access
   const currentPathRef = useRef<Point[]>([]);
   const isDrawingRef = useRef(false);
-  const drawnShapesRef = useRef<DrawnShape[]>([]);
-  
-  // Keep ref updated
-  useEffect(() => {
-    drawnShapesRef.current = drawnShapes;
-  }, [drawnShapes]);
 
-  // Drawing with PanResponder for better web compatibility
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (event: GestureResponderEvent) => {
-      const { locationX, locationY } = event.nativeEvent;
-      console.log('Touch started:', locationX, locationY);
-      isDrawingRef.current = true;
-      currentPathRef.current = [{ x: locationX, y: locationY }];
-    },
-    onPanResponderMove: (event: GestureResponderEvent) => {
-      if (!isDrawingRef.current) return;
-      
-      const { locationX, locationY } = event.nativeEvent;
-      const newPoint = { x: locationX, y: locationY };
-      currentPathRef.current = [...currentPathRef.current, newPoint];
-    },
-    onPanResponderRelease: () => {
-      console.log('Touch released, path length:', currentPathRef.current.length);
+  // Touch/Mouse handlers for drawing
+  const handleDrawStart = useCallback((x: number, y: number) => {
+    if (gameState === 'win' || gameState === 'fail') return;
+    console.log('Draw started:', x, y);
+    isDrawingRef.current = true;
+    setIsDrawing(true);
+    currentPathRef.current = [{ x, y }];
+    setCurrentPath([{ x, y }]);
+  }, [gameState]);
+
+  const handleDrawMove = useCallback((x: number, y: number) => {
+    if (!isDrawingRef.current || gameState === 'win' || gameState === 'fail') return;
+    
+    const newPoint = { x, y };
+    const newPath = [...currentPathRef.current, newPoint];
+    const totalLength = calculatePathLength(newPath);
+    
+    // Calculate total drawn length including previous shapes
+    const previousLength = drawnShapes.reduce(
+      (sum, shape) => sum + calculatePathLength(shape.points),
+      0
+    );
+    
+    if (previousLength + totalLength <= MAX_DRAW_LENGTH) {
+      currentPathRef.current = newPath;
+      setCurrentPath(newPath);
+      setCurrentDrawLength(previousLength + totalLength);
+    }
+  }, [gameState, drawnShapes]);
+
+  const handleDrawEnd = useCallback(() => {
+    console.log('Draw ended, path length:', currentPathRef.current.length);
+    if (!isDrawingRef.current || currentPathRef.current.length < 2) {
       isDrawingRef.current = false;
-    },
-    onPanResponderTerminate: () => {
-      console.log('Touch terminated');
-      isDrawingRef.current = false;
+      setIsDrawing(false);
       currentPathRef.current = [];
-    },
-  })).current;
-
-  // Handle touch end to update state
-  const handleTouchEnd = useCallback(() => {
-    if (currentPathRef.current.length < 2) {
       setCurrentPath([]);
       return;
     }
@@ -517,6 +516,8 @@ export default function BurgerDropGame() {
     };
 
     setDrawnShapes((prev) => [...prev, newShape]);
+    isDrawingRef.current = false;
+    setIsDrawing(false);
     currentPathRef.current = [];
     setCurrentPath([]);
 
@@ -526,18 +527,24 @@ export default function BurgerDropGame() {
     }
   }, [gameState, startGame]);
 
-  // Update current path for rendering
-  useEffect(() => {
-    let animationId: number;
-    const updatePath = () => {
-      if (isDrawingRef.current && currentPathRef.current.length > 0) {
-        setCurrentPath([...currentPathRef.current]);
-      }
-      animationId = requestAnimationFrame(updatePath);
-    };
-    animationId = requestAnimationFrame(updatePath);
-    return () => cancelAnimationFrame(animationId);
-  }, []);
+  // Touch event handlers
+  const onTouchStart = useCallback((e: any) => {
+    const touch = e.nativeEvent.touches?.[0] || e.nativeEvent;
+    const x = touch.locationX ?? touch.pageX;
+    const y = touch.locationY ?? touch.pageY;
+    handleDrawStart(x, y);
+  }, [handleDrawStart]);
+
+  const onTouchMove = useCallback((e: any) => {
+    const touch = e.nativeEvent.touches?.[0] || e.nativeEvent;
+    const x = touch.locationX ?? touch.pageX;
+    const y = touch.locationY ?? touch.pageY;
+    handleDrawMove(x, y);
+  }, [handleDrawMove]);
+
+  const onTouchEnd = useCallback(() => {
+    handleDrawEnd();
+  }, [handleDrawEnd]);
 
   // Pick background image
   const pickBackgroundImage = async () => {
