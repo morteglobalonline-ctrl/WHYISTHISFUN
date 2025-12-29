@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
+  ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,8 +14,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 // Import game components
 import DumpItGame from './dumpit';
 import CrazyHeadGame from './crazyhead';
+import ToiletChaosGame from './toiletchaos';
 
-type GameScreen = 'menu' | 'dumpit' | 'crazyhead';
+type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos';
 
 export default function MainMenu() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
