@@ -46,6 +46,134 @@ const LEVEL_CONFIGS = [
   { requiredPatties: 7, binYOffset: -220 },   // Level 5: high
 ];
 
+// ==================== ITEM MODULE SYSTEM ====================
+interface ItemConfig {
+  id: string;
+  name: string;
+  icon: string;
+  iconFamily: 'MaterialCommunityIcons' | 'Ionicons';
+  radius: number;
+  height: number;
+  mass: number;       // Affects physics
+  bounce: number;     // Item-specific bounce
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+}
+
+const ITEM_CONFIGS: ItemConfig[] = [
+  {
+    id: 'patty',
+    name: 'Spoiled Patty',
+    icon: 'hamburger',
+    iconFamily: 'MaterialCommunityIcons',
+    radius: 42,
+    height: 20,
+    mass: 1.0,
+    bounce: 0.4,
+    colors: { primary: '#6B5344', secondary: 'rgba(80, 100, 60, 0.4)', accent: 'rgba(60, 45, 35, 0.5)' },
+  },
+  {
+    id: 'money',
+    name: 'Money Stack',
+    icon: 'cash',
+    iconFamily: 'MaterialCommunityIcons',
+    radius: 38,
+    height: 18,
+    mass: 0.7,
+    bounce: 0.3,
+    colors: { primary: '#2E7D32', secondary: '#1B5E20', accent: '#A5D6A7' },
+  },
+  {
+    id: 'poop',
+    name: 'Cartoon Poop',
+    icon: 'emoticon-poop',
+    iconFamily: 'MaterialCommunityIcons',
+    radius: 40,
+    height: 35,
+    mass: 0.8,
+    bounce: 0.5,
+    colors: { primary: '#5D4037', secondary: '#3E2723', accent: '#8D6E63' },
+  },
+  {
+    id: 'teddy',
+    name: 'Teddy Bear',
+    icon: 'teddy-bear',
+    iconFamily: 'MaterialCommunityIcons',
+    radius: 44,
+    height: 40,
+    mass: 0.6,
+    bounce: 0.6,
+    colors: { primary: '#A1887F', secondary: '#8D6E63', accent: '#D7CCC8' },
+  },
+  {
+    id: 'phone',
+    name: 'Broken Phone',
+    icon: 'cellphone',
+    iconFamily: 'MaterialCommunityIcons',
+    radius: 35,
+    height: 50,
+    mass: 1.1,
+    bounce: 0.25,
+    colors: { primary: '#37474F', secondary: '#263238', accent: '#78909C' },
+  },
+];
+
+// ==================== TARGET MODULE SYSTEM ====================
+interface TargetConfig {
+  id: string;
+  name: string;
+  icon: string;
+  iconFamily: 'MaterialCommunityIcons' | 'Ionicons';
+  openingWidthRatio: number;  // Relative to target width
+  description: string;
+}
+
+const TARGET_CONFIGS: TargetConfig[] = [
+  {
+    id: 'trashbin',
+    name: 'Trash Bin',
+    icon: 'delete',
+    iconFamily: 'MaterialCommunityIcons',
+    openingWidthRatio: 0.68,
+    description: 'Standard disposal',
+  },
+  {
+    id: 'toilet',
+    name: 'Toilet',
+    icon: 'toilet',
+    iconFamily: 'MaterialCommunityIcons',
+    openingWidthRatio: 0.6,
+    description: 'Flush it away',
+  },
+  {
+    id: 'mouth',
+    name: 'Big Mouth',
+    icon: 'emoticon-excited',
+    iconFamily: 'MaterialCommunityIcons',
+    openingWidthRatio: 0.7,
+    description: 'Feed the hungry',
+  },
+  {
+    id: 'pig',
+    name: 'Hungry Pig',
+    icon: 'pig',
+    iconFamily: 'MaterialCommunityIcons',
+    openingWidthRatio: 0.65,
+    description: 'Oink oink!',
+  },
+  {
+    id: 'blackhole',
+    name: 'Black Hole',
+    icon: 'blur-radial',
+    iconFamily: 'MaterialCommunityIcons',
+    openingWidthRatio: 0.75,
+    description: 'Into the void',
+  },
+];
+
 interface Point {
   x: number;
   y: number;
