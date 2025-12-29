@@ -687,18 +687,48 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
           />
         )}
 
-        {/* Reaction effects */}
+        {/* Reaction effects - temporary animations on hit */}
         {reactionType === 'slap' && (
           <G>
-            <Path d={`M ${headX + 40} ${headY - 20} l 15 -10 l -5 5 l 15 -5`} stroke="#FFD700" strokeWidth={3} />
-            <Path d={`M ${headX - 50} ${headY - 15} l -15 -8 l 5 5 l -15 -3`} stroke="#FFD700" strokeWidth={3} />
+            {/* Star burst for money slap */}
+            <Path d={`M ${headX + 45} ${headY - 25} l 12 -8 l -4 4 l 12 -4`} stroke="#FFD700" strokeWidth={3} />
+            <Path d={`M ${headX - 50} ${headY - 20} l -12 -6 l 4 4 l -12 -2`} stroke="#FFD700" strokeWidth={3} />
+            <Circle cx={headX + 50} cy={headY - 30} r={6} fill="#FFD700" opacity={0.8} />
+            <Circle cx={headX - 45} cy={headY - 25} r={5} fill="#FFD700" opacity={0.7} />
+            <Text x={headX + 60} y={headY - 35} fill="#FF5722" fontSize={16} fontWeight="bold">!</Text>
           </G>
         )}
         
         {reactionType === 'crack' && (
           <G>
-            <Circle cx={headX + 35} cy={headY - 25} r={12} fill="none" stroke="#FF0000" strokeWidth={2} opacity={0.7} />
-            <Circle cx={headX - 40} cy={headY - 20} r={10} fill="none" stroke="#FF0000" strokeWidth={2} opacity={0.7} />
+            {/* Pain/shock circles for phone crack */}
+            <Circle cx={headX + 40} cy={headY - 28} r={14} fill="none" stroke="#FF5722" strokeWidth={2} opacity={0.8} />
+            <Circle cx={headX - 45} cy={headY - 22} r={12} fill="none" stroke="#FF5722" strokeWidth={2} opacity={0.7} />
+            <Circle cx={headX + 35} cy={headY - 25} r={8} fill="none" stroke="#FF0000" strokeWidth={1.5} opacity={0.6} />
+          </G>
+        )}
+
+        {reactionType === 'bounce' && (
+          <G>
+            {/* Soft bounce hearts/stars for teddy */}
+            <Path d={`M ${headX + 40} ${headY - 35} c -3 -8 -12 -8 -12 0 c 0 6 12 12 12 15 c 0 -3 12 -9 12 -15 c 0 -8 -9 -8 -12 0`} fill="#FF69B4" opacity={0.7} />
+            <Circle cx={headX - 40} cy={headY - 30} r={8} fill="#FFB6C1" opacity={0.5} />
+          </G>
+        )}
+
+        {reactionType === 'splat' && (
+          <G>
+            {/* Gross/disgusted reaction for poop */}
+            <Text x={headX + 45} y={headY - 30} fill="#5D4037" fontSize={18} fontWeight="bold">💩</Text>
+            <Path d={`M ${headX - 55} ${headY - 20} q -5 -10 0 -15`} stroke="#5D4037" strokeWidth={2} fill="none" opacity={0.6} />
+          </G>
+        )}
+
+        {reactionType === 'grease' && (
+          <G>
+            {/* Oily drip effect for patty */}
+            <Ellipse cx={headX + 35} cy={headY - 25} rx={8} ry={5} fill="#FFB74D" opacity={0.6} />
+            <Ellipse cx={headX - 38} cy={headY - 20} rx={6} ry={4} fill="#FFCC80" opacity={0.5} />
           </G>
         )}
       </G>
