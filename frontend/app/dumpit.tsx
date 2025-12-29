@@ -213,7 +213,11 @@ interface TrashBin {
 
 const TOTAL_LEVELS = 5;
 
-export default function PattyDisposalGame() {
+interface DumpItGameProps {
+  onBack: () => void;
+}
+
+export default function DumpItGame({ onBack }: DumpItGameProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const GAME_WIDTH = windowWidth;
   const GAME_HEIGHT = windowHeight;
