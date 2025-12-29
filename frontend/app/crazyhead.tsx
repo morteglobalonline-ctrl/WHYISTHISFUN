@@ -333,6 +333,20 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     }
   }, [levelConfig.required]);
 
+  // Restart level - MUST be defined before handleMiss
+  const restartLevel = useCallback(() => {
+    setHeadshots(0);
+    headshotsRef.current = 0;
+    setProjectile(null);
+    projectileRef.current = null;
+    setHitEffects([]);
+    setReactionType(null);
+    setHeadOffset({ x: 0, y: 0 });
+    setAimStart(null);
+    setAimEnd(null);
+    setGameState(hasStartedPlaying ? 'ready' : 'setup');
+  }, [hasStartedPlaying]);
+
   // Handle miss
   const handleMiss = useCallback(() => {
     setGameState('fail');
