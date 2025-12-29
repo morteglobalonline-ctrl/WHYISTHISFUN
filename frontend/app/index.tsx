@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Path, Circle, Rect, G, Polygon, Ellipse } from 'react-native-svg';
