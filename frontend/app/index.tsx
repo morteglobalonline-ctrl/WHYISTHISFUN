@@ -447,7 +447,7 @@ export default function BurgerDropGame() {
   };
 
   const nextLevel = () => {
-    if (currentLevel < LEVELS.length - 1) {
+    if (currentLevel < TOTAL_LEVELS - 1) {
       setCurrentLevel(currentLevel + 1);
     } else {
       setCurrentLevel(0); // Loop back to first level
