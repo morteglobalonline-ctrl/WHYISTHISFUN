@@ -1582,7 +1582,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.65)',
     padding: 12,
     borderRadius: 25,
-    marginLeft: 'auto',
+    marginRight: 10,
+  },
+  backButton: {
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    padding: 12,
+    borderRadius: 25,
     marginRight: 10,
   },
   settingsButton: {
