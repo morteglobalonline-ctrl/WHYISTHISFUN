@@ -309,8 +309,8 @@ export default function PattyDisposalGame() {
       y: dispenserY + 60,
       vx: (Math.random() - 0.5) * 2,
       vy: 3,
-      radius: PATTY_RADIUS,
-      height: PATTY_HEIGHT,
+      radius: currentItem.radius,
+      height: currentItem.height,
       rotation: 0,
       rotationSpeed: (Math.random() - 0.5) * 0.08,
       isOnPan: false,
@@ -321,7 +321,7 @@ export default function PattyDisposalGame() {
     setGameState('playing');
     setAimStart(null);
     setAimEnd(null);
-  }, [GAME_WIDTH]);
+  }, [GAME_WIDTH, currentItem]);
 
   // Auto-spawn first patty
   useEffect(() => {
