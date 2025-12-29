@@ -1,16 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  Dimensions,
   Text,
   TouchableOpacity,
   Image,
   Alert,
   Platform,
   useWindowDimensions,
-  PanResponder,
-  GestureResponderEvent,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Path, Circle, Rect, G, Polygon, Ellipse } from 'react-native-svg';
