@@ -404,6 +404,7 @@ export default function BurgerDropGame() {
   };
 
   const handleFail = () => {
+    console.log('Game failed! Restarting in 1 second...');
     setGameState('fail');
     if (gameLoopRef.current) {
       cancelAnimationFrame(gameLoopRef.current);
