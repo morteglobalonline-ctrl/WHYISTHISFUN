@@ -1355,6 +1355,13 @@ export default function PattyDisposalGame() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={styles.modsButton}
+          onPress={() => setShowMods(true)}
+        >
+          <MaterialCommunityIcons name="puzzle" size={22} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => setShowSettings(true)}
         >
