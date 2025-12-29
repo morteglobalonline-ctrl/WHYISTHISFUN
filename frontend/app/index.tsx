@@ -829,6 +829,8 @@ export default function BurgerDropGame() {
       <View 
         style={styles.gameContainer}
         {...panResponder.panHandlers}
+        onTouchEnd={handleTouchEnd}
+        onMouseUp={handleTouchEnd}
       >
         <Svg 
           style={{
