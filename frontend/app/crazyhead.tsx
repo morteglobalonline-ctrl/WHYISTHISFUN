@@ -712,18 +712,37 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
 
     switch (effect.type) {
       case 'splat':
+        // Poop splat - brown messy splatter that sticks
         return (
           <G key={effect.id}>
-            <Ellipse cx={x} cy={y} rx={18} ry={14} fill="#5D4037" opacity={0.85} />
-            <Ellipse cx={x - 8} cy={y + 5} rx={8} ry={6} fill="#4E342E" opacity={0.7} />
-            <Ellipse cx={x + 10} cy={y - 3} rx={6} ry={4} fill="#3E2723" opacity={0.6} />
+            <Ellipse cx={x} cy={y} rx={22} ry={18} fill="#5D4037" opacity={0.9} />
+            <Ellipse cx={x - 10} cy={y + 8} rx={10} ry={7} fill="#4E342E" opacity={0.8} />
+            <Ellipse cx={x + 12} cy={y - 5} rx={8} ry={5} fill="#3E2723" opacity={0.7} />
+            <Ellipse cx={x - 5} cy={y - 10} rx={6} ry={4} fill="#6D4C41" opacity={0.6} />
+            <Circle cx={x + 3} cy={y + 2} r={3} fill="#8D6E63" opacity={0.5} />
           </G>
         );
       case 'grease':
+        // Patty grease - oily shine overlay
         return (
           <G key={effect.id}>
-            <Ellipse cx={x} cy={y} rx={20} ry={16} fill="#FFD54F" opacity={0.4} />
-            <Ellipse cx={x + 5} cy={y - 5} rx={8} ry={6} fill="white" opacity={0.3} />
+            <Ellipse cx={x} cy={y} rx={24} ry={20} fill="#FFB74D" opacity={0.35} />
+            <Ellipse cx={x + 8} cy={y - 8} rx={10} ry={8} fill="white" opacity={0.4} />
+            <Ellipse cx={x - 6} cy={y + 5} rx={6} ry={4} fill="#FFCC80" opacity={0.3} />
+            {/* Shine spots */}
+            <Circle cx={x + 5} cy={y - 5} r={4} fill="white" opacity={0.6} />
+            <Circle cx={x - 8} cy={y + 3} r={2} fill="white" opacity={0.4} />
+          </G>
+        );
+      case 'crack':
+        // Phone crack - glass crack lines
+        return (
+          <G key={effect.id}>
+            <Line x1={x} y1={y - 15} x2={x + 12} y2={y + 20} stroke="#444" strokeWidth={2} opacity={0.8} />
+            <Line x1={x} y1={y - 15} x2={x - 10} y2={y + 15} stroke="#444" strokeWidth={1.5} opacity={0.7} />
+            <Line x1={x + 5} y1={y} x2={x + 18} y2={y + 8} stroke="#555" strokeWidth={1} opacity={0.6} />
+            <Line x1={x - 3} y1={y + 5} x2={x - 15} y2={y + 2} stroke="#555" strokeWidth={1} opacity={0.5} />
+            <Line x1={x} y1={y - 15} x2={x + 3} y2={y - 25} stroke="#444" strokeWidth={1.5} opacity={0.6} />
           </G>
         );
       default:
