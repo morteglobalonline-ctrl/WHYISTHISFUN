@@ -249,12 +249,14 @@ export default function BurgerStackGame() {
   // Check collision with target platform (for stacking)
   const checkTargetCollision = useCallback((p: Patty, stack: Patty[]): { onTarget: boolean; restY: number } => {
     const target = level.target;
-    const targetLeft = target.x;
-    const targetRight = target.x + target.width;
+    const targetLeft = target.x - 10; // More forgiving left bound
+    const targetRight = target.x + target.width + 10; // More forgiving right bound
     const targetTop = target.y;
+    const targetCenterX = target.x + target.width / 2;
     
-    // Check if patty is within target horizontal bounds
-    if (p.x - p.radius * 0.5 < targetLeft || p.x + p.radius * 0.5 > targetRight) {
+    // Check if patty center is reasonably within target horizontal bounds
+    // Allow patty to overlap edges
+    if (p.x < targetLeft || p.x > targetRight) {
       return { onTarget: false, restY: 0 };
     }
     
@@ -264,15 +266,16 @@ export default function BurgerStackGame() {
     for (const stacked of stack) {
       if (stacked.id === p.id) continue;
       // Check if this patty is roughly above the stacked one
-      const horizontalOverlap = Math.abs(p.x - stacked.x) < p.radius + stacked.radius * 0.7;
+      const horizontalOverlap = Math.abs(p.x - stacked.x) < p.radius * 1.5;
       if (horizontalOverlap && stacked.y < highestSurface) {
-        highestSurface = stacked.y - stacked.height;
+        highestSurface = stacked.y - stacked.height * 1.5;
       }
     }
     
     const pattyBottom = p.y + p.height / 2;
     
-    if (pattyBottom >= highestSurface - 5 && p.vy >= 0) {
+    // More forgiving collision detection
+    if (pattyBottom >= highestSurface - 15) {
       return { onTarget: true, restY: highestSurface - p.height / 2 };
     }
     
