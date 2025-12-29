@@ -206,6 +206,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       setFocusPoint(tempFocusPoint);
       setShowFocusSelector(false);
       setTempImage(null);
+      setHasStartedPlaying(true);
       if (gameState === 'setup') {
         setGameState('ready');
       }
