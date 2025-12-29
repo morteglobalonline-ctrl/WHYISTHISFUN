@@ -1330,9 +1330,9 @@ export default function PattyDisposalGame() {
           viewBox={`0 0 ${GAME_WIDTH} ${GAME_HEIGHT}`}
         >
           {renderDispenser()}
-          {renderTrashBin()}
+          {renderTarget()}
           {renderPan()}
-          {renderPatty()}
+          {renderItem()}
           {renderAimArrow()}
         </Svg>
       </View>
