@@ -485,8 +485,11 @@ export default function BurgerDropGame() {
   }, [gameState, drawnShapes]);
 
   const handleDrawEnd = useCallback(() => {
-    console.log('Draw ended, path length:', currentPathRef.current.length);
-    if (!isDrawingRef.current || currentPathRef.current.length < 2) {
+    console.log('Draw ended, path length:', currentPathRef.current.length, 'isDrawing:', isDrawingRef.current);
+    
+    // Check if we have a valid path
+    if (currentPathRef.current.length < 2) {
+      console.log('Path too short, clearing');
       isDrawingRef.current = false;
       setIsDrawing(false);
       currentPathRef.current = [];
@@ -512,7 +515,13 @@ export default function BurgerDropGame() {
       bounds: { minX, maxX, minY, maxY },
     };
 
-    setDrawnShapes((prev) => [...prev, newShape]);
+    console.log('Adding new shape with', newShape.points.length, 'points');
+    setDrawnShapes((prev) => {
+      const updated = [...prev, newShape];
+      console.log('DrawnShapes updated, now has', updated.length, 'shapes');
+      return updated;
+    });
+    
     isDrawingRef.current = false;
     setIsDrawing(false);
     currentPathRef.current = [];
@@ -520,6 +529,7 @@ export default function BurgerDropGame() {
 
     // Auto-start game after first draw if ready
     if (gameState === 'ready') {
+      console.log('Starting game!');
       startGame();
     }
   }, [gameState, startGame]);
