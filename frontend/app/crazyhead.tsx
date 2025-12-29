@@ -436,8 +436,8 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     setHeadOffset({ x: 0, y: 0 });
     setAimStart(null);
     setAimEnd(null);
-    setGameState(headImage ? 'ready' : 'setup');
-  }, [headImage]);
+    setGameState(hasStartedPlaying ? 'ready' : 'setup');
+  }, [hasStartedPlaying]);
 
   // Next level
   const nextLevel = useCallback(() => {
