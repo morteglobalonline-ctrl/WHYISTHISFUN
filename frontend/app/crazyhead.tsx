@@ -342,7 +342,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     setTimeout(() => {
       restartLevel();
     }, 1500);
-  }, []);
+  }, [restartLevel]);
 
   // Physics update
   const updatePhysics = useCallback(() => {
