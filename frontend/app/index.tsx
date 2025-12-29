@@ -233,31 +233,39 @@ export default function PattyDisposalGame() {
     const binBottom = bin.y + bin.height;
     const openingLeft = bin.x + (bin.width - bin.openingWidth) / 2;
     const openingRight = openingLeft + bin.openingWidth;
+    const binCenterX = bin.x + bin.width / 2;
     
-    // Check if patty is inside the bin area
-    const pattyInBinX = p.x > binLeft && p.x < binRight;
-    const pattyInBinY = p.y > binTop && p.y < binBottom;
+    // Check if patty center is within the opening zone (more forgiving)
+    const inOpeningX = p.x > openingLeft - 5 && p.x < openingRight + 5;
+    const pastOpeningY = p.y > binTop + 10;
+    const withinBinDepth = p.y < binBottom - 10;
     
-    if (pattyInBinX && pattyInBinY) {
-      // Check if entered through opening (top)
-      const enteredThroughOpening = p.x > openingLeft + 10 && p.x < openingRight - 10;
-      
-      if (enteredThroughOpening && p.vy > 0) {
-        return 'inside';
-      }
+    // Success: Patty went through opening and is inside bin
+    if (inOpeningX && pastOpeningY && withinBinDepth && p.vy > 0) {
+      return 'inside';
     }
     
-    // Check side collisions
-    const hitLeftWall = p.x + p.radius > binLeft && p.x - p.radius < binLeft + 15 && p.y > binTop && p.y < binBottom;
-    const hitRightWall = p.x - p.radius < binRight && p.x + p.radius > binRight - 15 && p.y > binTop && p.y < binBottom;
-    const hitFrontWall = p.y + p.height > binBottom - 20 && p.y < binBottom && pattyInBinX;
+    // Check side/rim collisions
+    const pattyInBinX = p.x + p.radius > binLeft && p.x - p.radius < binRight;
+    const pattyNearBinY = p.y > binTop - p.height && p.y < binBottom;
     
-    // Check opening rim collision
-    const hitLeftRim = p.x > binLeft && p.x < openingLeft + 15 && p.y + p.height > binTop - 10 && p.y < binTop + 20;
-    const hitRightRim = p.x > openingRight - 15 && p.x < binRight && p.y + p.height > binTop - 10 && p.y < binTop + 20;
-    
-    if (hitLeftWall || hitRightWall || hitFrontWall || hitLeftRim || hitRightRim) {
-      return 'side';
+    if (pattyInBinX && pattyNearBinY) {
+      // Hit left wall
+      if (p.x - p.radius < binLeft + 12 && p.x > binLeft - p.radius) {
+        return 'side';
+      }
+      // Hit right wall
+      if (p.x + p.radius > binRight - 12 && p.x < binRight + p.radius) {
+        return 'side';
+      }
+      // Hit left rim of opening
+      if (p.x > binLeft && p.x < openingLeft + 5 && p.y < binTop + 25) {
+        return 'side';
+      }
+      // Hit right rim of opening
+      if (p.x > openingRight - 5 && p.x < binRight && p.y < binTop + 25) {
+        return 'side';
+      }
     }
     
     return 'none';
