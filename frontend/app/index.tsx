@@ -824,30 +824,31 @@ export default function BurgerDropGame() {
       )}
 
       {/* Game Canvas */}
-      <GestureDetector gesture={panGesture}>
-        <View style={styles.gameContainer}>
-          <Svg 
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-            }}
-            width={GAME_WIDTH} 
-            height={GAME_HEIGHT} 
-            viewBox={`0 0 ${GAME_WIDTH} ${GAME_HEIGHT}`}
-          >
-            {/* Drawn shapes */}
-            {renderDrawnShapes()}
-            
-            {/* Game objects */}
-            {renderDispenser()}
-            {renderTarget()}
-            {renderHazards()}
-            {renderObstacles()}
-            {renderPatty()}
-          </Svg>
-        </View>
-      </GestureDetector>
+      <View 
+        style={styles.gameContainer}
+        {...panResponder.panHandlers}
+      >
+        <Svg 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}
+          width={GAME_WIDTH} 
+          height={GAME_HEIGHT} 
+          viewBox={`0 0 ${GAME_WIDTH} ${GAME_HEIGHT}`}
+        >
+          {/* Drawn shapes */}
+          {renderDrawnShapes()}
+          
+          {/* Game objects */}
+          {renderDispenser()}
+          {renderTarget()}
+          {renderHazards()}
+          {renderObstacles()}
+          {renderPatty()}
+        </Svg>
+      </View>
 
       {/* UI Overlay */}
       <View style={styles.uiOverlay}>
