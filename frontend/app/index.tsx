@@ -456,86 +456,88 @@ export default function BurgerDropGame() {
   // Track current path in a ref for immediate access in PanResponder
   const currentPathRef = useRef<Point[]>([]);
   const isDrawingRef = useRef(false);
+  const drawnShapesRef = useRef<DrawnShape[]>([]);
+  
+  // Keep ref updated
+  useEffect(() => {
+    drawnShapesRef.current = drawnShapes;
+  }, [drawnShapes]);
 
   // Drawing with PanResponder for better web compatibility
-  const panResponder = useMemo(() => PanResponder.create({
+  const panResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (event: GestureResponderEvent) => {
-      if (gameState === 'win' || gameState === 'fail') return;
       const { locationX, locationY } = event.nativeEvent;
       console.log('Touch started:', locationX, locationY);
       isDrawingRef.current = true;
-      setIsDrawing(true);
       currentPathRef.current = [{ x: locationX, y: locationY }];
-      setCurrentPath([{ x: locationX, y: locationY }]);
     },
     onPanResponderMove: (event: GestureResponderEvent) => {
-      if (!isDrawingRef.current || gameState === 'win' || gameState === 'fail') return;
+      if (!isDrawingRef.current) return;
       
       const { locationX, locationY } = event.nativeEvent;
       const newPoint = { x: locationX, y: locationY };
-      const newPath = [...currentPathRef.current, newPoint];
-      const totalLength = calculatePathLength(newPath);
-      
-      // Calculate total drawn length including previous shapes
-      const previousLength = drawnShapes.reduce(
-        (sum, shape) => sum + calculatePathLength(shape.points),
-        0
-      );
-      
-      if (previousLength + totalLength <= MAX_DRAW_LENGTH) {
-        currentPathRef.current = newPath;
-        setCurrentPath(newPath);
-        setCurrentDrawLength(previousLength + totalLength);
-      }
+      currentPathRef.current = [...currentPathRef.current, newPoint];
     },
     onPanResponderRelease: () => {
       console.log('Touch released, path length:', currentPathRef.current.length);
-      if (!isDrawingRef.current || currentPathRef.current.length < 2) {
-        isDrawingRef.current = false;
-        setIsDrawing(false);
-        currentPathRef.current = [];
-        setCurrentPath([]);
-        return;
-      }
-
-      // Calculate bounds
-      let minX = Infinity,
-        maxX = -Infinity,
-        minY = Infinity,
-        maxY = -Infinity;
-      currentPathRef.current.forEach((p) => {
-        minX = Math.min(minX, p.x);
-        maxX = Math.max(maxX, p.x);
-        minY = Math.min(minY, p.y);
-        maxY = Math.max(maxY, p.y);
-      });
-
-      const newShape: DrawnShape = {
-        id: Date.now().toString(),
-        points: [...currentPathRef.current],
-        bounds: { minX, maxX, minY, maxY },
-      };
-
-      setDrawnShapes((prev) => [...prev, newShape]);
       isDrawingRef.current = false;
-      setIsDrawing(false);
-      currentPathRef.current = [];
-      setCurrentPath([]);
-
-      // Auto-start game after first draw if ready
-      if (gameState === 'ready') {
-        startGame();
-      }
     },
     onPanResponderTerminate: () => {
+      console.log('Touch terminated');
       isDrawingRef.current = false;
-      setIsDrawing(false);
       currentPathRef.current = [];
-      setCurrentPath([]);
     },
-  }), [gameState, drawnShapes, startGame]);
+  })).current;
+
+  // Handle touch end to update state
+  const handleTouchEnd = useCallback(() => {
+    if (currentPathRef.current.length < 2) {
+      setCurrentPath([]);
+      return;
+    }
+
+    // Calculate bounds
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
+    currentPathRef.current.forEach((p) => {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+      maxY = Math.max(maxY, p.y);
+    });
+
+    const newShape: DrawnShape = {
+      id: Date.now().toString(),
+      points: [...currentPathRef.current],
+      bounds: { minX, maxX, minY, maxY },
+    };
+
+    setDrawnShapes((prev) => [...prev, newShape]);
+    currentPathRef.current = [];
+    setCurrentPath([]);
+
+    // Auto-start game after first draw if ready
+    if (gameState === 'ready') {
+      startGame();
+    }
+  }, [gameState, startGame]);
+
+  // Update current path for rendering
+  useEffect(() => {
+    let animationId: number;
+    const updatePath = () => {
+      if (isDrawingRef.current && currentPathRef.current.length > 0) {
+        setCurrentPath([...currentPathRef.current]);
+      }
+      animationId = requestAnimationFrame(updatePath);
+    };
+    animationId = requestAnimationFrame(updatePath);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
 
   // Pick background image
   const pickBackgroundImage = async () => {
