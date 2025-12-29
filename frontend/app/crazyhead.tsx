@@ -303,36 +303,59 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const applyHitEffect = useCallback((p: Projectile) => {
     const item = CRAZY_HEAD_ITEMS.find(i => i.id === p.itemId) || CRAZY_HEAD_ITEMS[0];
     
-    // Add visual effect
-    if (item.sticks) {
-      const headX = CHARACTER_X + headOffset.x;
-      const headY = CHARACTER_Y - 60 + headOffset.y;
-      const angle = Math.atan2(p.y - headY, p.x - headX);
-      
+    // Add visual effect - ALL items create effects on headshot
+    const headX = CHARACTER_X + headOffset.x;
+    const headY = CHARACTER_Y - 60 + headOffset.y;
+    const angle = Math.atan2(p.y - headY, p.x - headX);
+    
+    // Create persistent effect for items that stick (poop, patty, phone crack)
+    if (item.sticks || item.hitEffect === 'crack') {
       setHitEffects(prev => [...prev, {
         id: Date.now().toString(),
         type: item.hitEffect,
-        x: (p.x - headX) * 0.6, // Position relative to head center
-        y: (p.y - headY) * 0.6,
+        x: (p.x - headX) * 0.5, // Position relative to head center
+        y: (p.y - headY) * 0.5,
         rotation: angle * 180 / Math.PI,
         itemId: p.itemId,
       }]);
     }
 
-    // Trigger reaction
+    // Play hit sound (fire and forget)
+    playHitSound(item.hitEffect);
+
+    // Trigger reaction animation
     setReactionType(item.hitEffect);
     
-    // Head recoil based on effect
-    if (item.hitEffect === 'slap' || item.hitEffect === 'crack') {
-      setHeadOffset({ x: p.vx > 0 ? 8 : -8, y: -5 });
+    // Head recoil/shake based on effect type
+    if (item.hitEffect === 'slap') {
+      // Money slap - strong sideways recoil
+      setHeadOffset({ x: p.vx > 0 ? 12 : -12, y: -3 });
+      setTimeout(() => setHeadOffset({ x: p.vx > 0 ? -4 : 4, y: 0 }), 100);
+      setTimeout(() => setHeadOffset({ x: 0, y: 0 }), 250);
+    } else if (item.hitEffect === 'crack') {
+      // Phone crack - quick shake
+      setHeadOffset({ x: 6, y: -4 });
+      setTimeout(() => setHeadOffset({ x: -6, y: 2 }), 50);
+      setTimeout(() => setHeadOffset({ x: 4, y: -2 }), 100);
       setTimeout(() => setHeadOffset({ x: 0, y: 0 }), 200);
     } else if (item.hitEffect === 'bounce') {
-      setHeadOffset({ x: 0, y: -10 });
+      // Teddy - soft wobble
+      setHeadOffset({ x: 0, y: -8 });
+      setTimeout(() => setHeadOffset({ x: 3, y: -4 }), 80);
+      setTimeout(() => setHeadOffset({ x: -3, y: -2 }), 160);
+      setTimeout(() => setHeadOffset({ x: 0, y: 0 }), 250);
+    } else if (item.hitEffect === 'splat') {
+      // Poop splat - small backward jolt
+      setHeadOffset({ x: 0, y: -6 });
+      setTimeout(() => setHeadOffset({ x: 0, y: 0 }), 200);
+    } else if (item.hitEffect === 'grease') {
+      // Patty - soft thud
+      setHeadOffset({ x: 0, y: -4 });
       setTimeout(() => setHeadOffset({ x: 0, y: 0 }), 150);
     }
 
-    // Clear reaction after delay
-    setTimeout(() => setReactionType(null), 500);
+    // Clear reaction animation after delay
+    setTimeout(() => setReactionType(null), 600);
   }, [CHARACTER_X, CHARACTER_Y, headOffset]);
 
   // Handle successful headshot
