@@ -1291,6 +1291,108 @@ export default function PattyDisposalGame() {
     </Modal>
   );
 
+  // Mods Modal - Item & Target Selection
+  const renderModsModal = () => (
+    <Modal
+      visible={showMods}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowMods(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Customize</Text>
+            <TouchableOpacity onPress={() => setShowMods(false)}>
+              <Ionicons name="close" size={28} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.settingsScroll}>
+            {/* Item Selection */}
+            <Text style={styles.sectionTitle}>Choose Item</Text>
+            <View style={styles.modsGrid}>
+              {ITEM_CONFIGS.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.modOption,
+                    selectedItem === item.id && styles.modOptionSelected,
+                  ]}
+                  onPress={() => setSelectedItem(item.id)}
+                >
+                  <View style={[styles.modIconContainer, { backgroundColor: item.colors.primary }]}>
+                    <MaterialCommunityIcons 
+                      name={item.icon as any} 
+                      size={32} 
+                      color="white" 
+                    />
+                  </View>
+                  <Text style={styles.modOptionLabel}>{item.name}</Text>
+                  {selectedItem === item.id && (
+                    <View style={styles.modSelectedBadge}>
+                      <Ionicons name="checkmark" size={14} color="white" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Target Selection */}
+            <Text style={styles.sectionTitle}>Choose Target</Text>
+            <View style={styles.modsGrid}>
+              {TARGET_CONFIGS.map((target) => {
+                const targetColors: Record<string, string> = {
+                  trashbin: '#455A64',
+                  toilet: '#E0E0E0',
+                  mouth: '#FFCC80',
+                  pig: '#F8BBD9',
+                  blackhole: '#7B1FA2',
+                };
+                return (
+                  <TouchableOpacity
+                    key={target.id}
+                    style={[
+                      styles.modOption,
+                      selectedTarget === target.id && styles.modOptionSelected,
+                    ]}
+                    onPress={() => setSelectedTarget(target.id)}
+                  >
+                    <View style={[styles.modIconContainer, { backgroundColor: targetColors[target.id] || '#666' }]}>
+                      <MaterialCommunityIcons 
+                        name={target.icon as any} 
+                        size={32} 
+                        color={target.id === 'toilet' ? '#333' : 'white'} 
+                      />
+                    </View>
+                    <Text style={styles.modOptionLabel}>{target.name}</Text>
+                    {selectedTarget === target.id && (
+                      <View style={styles.modSelectedBadge}>
+                        <Ionicons name="checkmark" size={14} color="white" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            
+            {/* Play Button */}
+            <TouchableOpacity
+              style={styles.playButton}
+              onPress={() => {
+                setShowMods(false);
+                restartLevel();
+              }}
+            >
+              <Ionicons name="play" size={24} color="white" />
+              <Text style={styles.playButtonText}>Play with Selection</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <StatusBar style="light" />
