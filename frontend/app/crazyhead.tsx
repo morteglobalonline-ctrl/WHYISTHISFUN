@@ -135,7 +135,10 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const CHARACTER_X = GAME_WIDTH * 0.5;
   const CHARACTER_Y = GAME_HEIGHT * 0.45;
   const HEAD_RADIUS = 55;
-  const HEAD_CENTER_HITBOX = HEAD_RADIUS * 0.7; // Only center 70% counts as hit
+  const HEAD_CENTER_HITBOX = HEAD_RADIUS * 0.85; // More forgiving - 85% of head radius counts as hit
+  
+  // Debug toggle (set to true to see hitbox)
+  const DEBUG_SHOW_HITBOX = false;
 
   // Game state
   const [currentLevel, setCurrentLevel] = useState(0);
