@@ -16,10 +16,6 @@ import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-g
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const GAME_WIDTH = SCREEN_WIDTH;
-const GAME_HEIGHT = SCREEN_HEIGHT;
-
 // Physics constants
 const GRAVITY = 0.5;
 const FRICTION = 0.98;
