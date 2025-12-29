@@ -195,14 +195,17 @@ const styles = StyleSheet.create({
     top: '40%',
     right: -50,
   },
-  content: {
+  scrollContent: {
     flex: 1,
+  },
+  content: {
     paddingTop: 80,
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 40,
   },
   title: {
     fontSize: 38,
