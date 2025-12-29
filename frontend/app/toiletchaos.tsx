@@ -180,6 +180,7 @@ export default function ToiletChaosGame({ onBack }: ToiletChaosProps) {
     setObstacles(obstaclesRef.current);
     setSquishFactor(1);
     setPlayerRotation(0);
+    setIsNewRecord(false);
     setGameState('playing');
   }, [GAME_HEIGHT, initObstacles]);
 
