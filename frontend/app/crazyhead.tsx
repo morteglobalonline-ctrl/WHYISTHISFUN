@@ -248,7 +248,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     const item = CRAZY_HEAD_ITEMS.find(i => i.id === selectedItemId) || CRAZY_HEAD_ITEMS[0];
     const newProjectile: Projectile = {
       id: Date.now().toString(),
-      x: LAUNCHER_X,
+      x: launcherX,
       y: LAUNCHER_Y - 40,
       vx: 0,
       vy: 0,
@@ -262,7 +262,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     projectileRef.current = newProjectile;
     setProjectile(newProjectile);
     setGameState('aiming');
-  }, [selectedItemId, LAUNCHER_X, LAUNCHER_Y]);
+  }, [selectedItemId, launcherX, LAUNCHER_Y]);
 
   // Launch projectile
   const launchProjectile = useCallback((direction: Point, power: number) => {
