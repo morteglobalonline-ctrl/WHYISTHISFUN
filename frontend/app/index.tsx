@@ -31,6 +31,10 @@ export default function MainMenu() {
     return <CrazyHeadGame onBack={() => setCurrentScreen('menu')} />;
   }
 
+  if (currentScreen === 'toiletchaos') {
+    return <ToiletChaosGame onBack={() => setCurrentScreen('menu')} />;
+  }
+
   // Main Menu
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -50,7 +54,7 @@ export default function MainMenu() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView style={styles.scrollContent} contentContainerStyle={styles.content}>
         {/* Title */}
         <View style={styles.titleContainer}>
           <MaterialCommunityIcons name="gamepad-variant" size={60} color="#4CAF50" />
