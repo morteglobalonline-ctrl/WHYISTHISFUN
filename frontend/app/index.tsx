@@ -965,14 +965,16 @@ export default function PattyDisposalGame() {
     );
   };
 
-  // Render trash bin
-  const renderTrashBin = () => {
+  // Render target based on selected target type
+  const renderTarget = () => {
     const bin = targetPosition;
     const binCenterX = bin.x + bin.width / 2;
+    const openingLeft = bin.x + (bin.width - bin.openingWidth) / 2;
+    const target = currentTarget;
     
     return (
       <G>
-        {/* Shadow */}
+        {/* Shadow (common to all targets) */}
         <Ellipse
           cx={binCenterX}
           cy={bin.y + bin.height + 5}
@@ -981,89 +983,121 @@ export default function PattyDisposalGame() {
           fill="rgba(0,0,0,0.2)"
         />
         
-        {/* Bin body */}
-        <Path
-          d={`M ${bin.x + 8} ${bin.openingY + 15}
-              L ${bin.x} ${bin.y + bin.height}
-              L ${bin.x + bin.width} ${bin.y + bin.height}
-              L ${bin.x + bin.width - 8} ${bin.openingY + 15}
-              Z`}
-          fill="#455A64"
-        />
+        {/* Trash Bin */}
+        {target.id === 'trashbin' && (
+          <>
+            <Path
+              d={`M ${bin.x + 8} ${bin.openingY + 15}
+                  L ${bin.x} ${bin.y + bin.height}
+                  L ${bin.x + bin.width} ${bin.y + bin.height}
+                  L ${bin.x + bin.width - 8} ${bin.openingY + 15}
+                  Z`}
+              fill="#455A64"
+            />
+            <Rect x={bin.x + 5} y={bin.openingY + 20} width={bin.width - 10} height={bin.height - 25} rx={5} fill="#546E7A" />
+            <Circle cx={binCenterX} cy={bin.openingY + bin.height / 2 + 10} r={25} fill="#37474F" />
+            <G transform={`translate(${binCenterX}, ${bin.openingY + bin.height / 2 + 10})`}>
+              <Path d="M -12 -8 L 0 -18 L 12 -8 L 6 -8 L 0 0 L -6 -8 Z" fill="#4CAF50" />
+              <Path d="M 15 5 L 10 18 L -5 12 L -2 8 L 8 5 L 5 12 Z" fill="#4CAF50" transform="rotate(120)" />
+              <Path d="M 15 5 L 10 18 L -5 12 L -2 8 L 8 5 L 5 12 Z" fill="#4CAF50" transform="rotate(240)" />
+            </G>
+            <Rect x={bin.x - 5} y={bin.openingY} width={bin.width + 10} height={18} rx={4} fill="#37474F" />
+          </>
+        )}
         
-        {/* Bin front face */}
-        <Rect
-          x={bin.x + 5}
-          y={bin.openingY + 20}
-          width={bin.width - 10}
-          height={bin.height - 25}
-          rx={5}
-          fill="#546E7A"
-        />
+        {/* Toilet */}
+        {target.id === 'toilet' && (
+          <>
+            {/* Tank */}
+            <Rect x={binCenterX - 30} y={bin.openingY - 50} width={60} height={50} rx={8} fill="#E0E0E0" />
+            <Rect x={binCenterX - 15} y={bin.openingY - 60} width={30} height={15} rx={4} fill="#BDBDBD" />
+            {/* Bowl */}
+            <Ellipse cx={binCenterX} cy={bin.openingY + 40} rx={bin.width / 2 - 5} ry={45} fill="#E0E0E0" />
+            <Ellipse cx={binCenterX} cy={bin.openingY + 35} rx={bin.width / 2 - 15} ry={35} fill="#FAFAFA" />
+            {/* Seat */}
+            <Ellipse cx={binCenterX} cy={bin.openingY + 10} rx={bin.width / 2 + 5} ry={18} fill="#ECEFF1" stroke="#BDBDBD" strokeWidth={2} />
+            {/* Flush handle */}
+            <Rect x={binCenterX + 25} y={bin.openingY - 40} width={15} height={6} rx={3} fill="#90A4AE" />
+          </>
+        )}
         
-        {/* Recycle symbol area */}
-        <Circle
-          cx={binCenterX}
-          cy={bin.openingY + bin.height / 2 + 10}
-          r={25}
-          fill="#37474F"
-        />
+        {/* Big Mouth */}
+        {target.id === 'mouth' && (
+          <>
+            {/* Face background */}
+            <Circle cx={binCenterX} cy={bin.openingY + 50} r={bin.width / 2 + 10} fill="#FFCC80" />
+            {/* Eyes */}
+            <Circle cx={binCenterX - 25} cy={bin.openingY + 20} r={15} fill="white" />
+            <Circle cx={binCenterX + 25} cy={bin.openingY + 20} r={15} fill="white" />
+            <Circle cx={binCenterX - 22} cy={bin.openingY + 22} r={7} fill="#333" />
+            <Circle cx={binCenterX + 28} cy={bin.openingY + 22} r={7} fill="#333" />
+            {/* Mouth */}
+            <Ellipse cx={binCenterX} cy={bin.openingY + 70} rx={bin.openingWidth / 2 + 10} ry={35} fill="#C62828" />
+            <Ellipse cx={binCenterX} cy={bin.openingY + 65} rx={bin.openingWidth / 2} ry={25} fill="#1A1A1A" />
+            {/* Tongue */}
+            <Ellipse cx={binCenterX} cy={bin.openingY + 85} rx={20} ry={15} fill="#EF5350" />
+            {/* Teeth */}
+            <Rect x={binCenterX - 30} y={bin.openingY + 48} width={12} height={10} rx={2} fill="white" />
+            <Rect x={binCenterX - 15} y={bin.openingY + 48} width={12} height={10} rx={2} fill="white" />
+            <Rect x={binCenterX + 3} y={bin.openingY + 48} width={12} height={10} rx={2} fill="white" />
+            <Rect x={binCenterX + 18} y={bin.openingY + 48} width={12} height={10} rx={2} fill="white" />
+          </>
+        )}
         
-        {/* Recycle arrows (simplified) */}
-        <G transform={`translate(${binCenterX}, ${bin.openingY + bin.height / 2 + 10})`}>
-          <Path
-            d="M -12 -8 L 0 -18 L 12 -8 L 6 -8 L 0 0 L -6 -8 Z"
-            fill="#4CAF50"
+        {/* Hungry Pig */}
+        {target.id === 'pig' && (
+          <>
+            {/* Pig face */}
+            <Circle cx={binCenterX} cy={bin.openingY + 50} r={bin.width / 2 + 5} fill="#F8BBD9" />
+            {/* Ears */}
+            <Ellipse cx={binCenterX - 45} cy={bin.openingY + 10} rx={20} ry={25} fill="#F48FB1" />
+            <Ellipse cx={binCenterX + 45} cy={bin.openingY + 10} rx={20} ry={25} fill="#F48FB1" />
+            {/* Eyes */}
+            <Circle cx={binCenterX - 22} cy={bin.openingY + 35} r={12} fill="white" />
+            <Circle cx={binCenterX + 22} cy={bin.openingY + 35} r={12} fill="white" />
+            <Circle cx={binCenterX - 20} cy={bin.openingY + 37} r={6} fill="#333" />
+            <Circle cx={binCenterX + 24} cy={bin.openingY + 37} r={6} fill="#333" />
+            {/* Snout */}
+            <Ellipse cx={binCenterX} cy={bin.openingY + 60} rx={30} ry={22} fill="#F48FB1" />
+            <Circle cx={binCenterX - 10} cy={bin.openingY + 58} r={5} fill="#333" />
+            <Circle cx={binCenterX + 10} cy={bin.openingY + 58} r={5} fill="#333" />
+            {/* Mouth (opening) */}
+            <Ellipse cx={binCenterX} cy={bin.openingY + 85} rx={bin.openingWidth / 2} ry={20} fill="#1A1A1A" />
+            <Ellipse cx={binCenterX} cy={bin.openingY + 82} rx={bin.openingWidth / 2 - 5} ry={15} fill="#C62828" />
+          </>
+        )}
+        
+        {/* Black Hole */}
+        {target.id === 'blackhole' && (
+          <>
+            {/* Outer glow */}
+            <Circle cx={binCenterX} cy={bin.openingY + 50} r={bin.width / 2 + 20} fill="#4A148C" opacity={0.3} />
+            <Circle cx={binCenterX} cy={bin.openingY + 50} r={bin.width / 2 + 10} fill="#6A1B9A" opacity={0.5} />
+            {/* Swirl effect */}
+            <Circle cx={binCenterX} cy={bin.openingY + 50} r={bin.width / 2} fill="#7B1FA2" />
+            <Ellipse cx={binCenterX - 15} cy={bin.openingY + 40} rx={25} ry={10} fill="#9C27B0" transform={`rotate(-30 ${binCenterX} ${bin.openingY + 50})`} />
+            <Ellipse cx={binCenterX + 15} cy={bin.openingY + 60} rx={20} ry={8} fill="#9C27B0" transform={`rotate(30 ${binCenterX} ${bin.openingY + 50})`} />
+            {/* Center void */}
+            <Circle cx={binCenterX} cy={bin.openingY + 50} r={bin.openingWidth / 2} fill="#1A1A1A" />
+            {/* Stars being sucked in */}
+            <Circle cx={binCenterX - 30} cy={bin.openingY + 30} r={2} fill="white" />
+            <Circle cx={binCenterX + 35} cy={bin.openingY + 40} r={1.5} fill="white" />
+            <Circle cx={binCenterX - 25} cy={bin.openingY + 70} r={2} fill="white" />
+            <Circle cx={binCenterX + 28} cy={bin.openingY + 65} r={1} fill="white" />
+          </>
+        )}
+        
+        {/* Opening indicator (common - shows the entry zone) */}
+        {target.id === 'trashbin' && (
+          <Rect
+            x={openingLeft}
+            y={bin.openingY + 3}
+            width={bin.openingWidth}
+            height={12}
+            rx={3}
+            fill="#1A1A1A"
           />
-          <Path
-            d="M 15 5 L 10 18 L -5 12 L -2 8 L 8 5 L 5 12 Z"
-            fill="#4CAF50"
-            transform="rotate(120)"
-          />
-          <Path
-            d="M 15 5 L 10 18 L -5 12 L -2 8 L 8 5 L 5 12 Z"
-            fill="#4CAF50"
-            transform="rotate(240)"
-          />
-        </G>
-        
-        {/* Bin rim / opening */}
-        <Rect
-          x={bin.x - 5}
-          y={bin.openingY}
-          width={bin.width + 10}
-          height={18}
-          rx={4}
-          fill="#37474F"
-        />
-        
-        {/* Opening hole (where patty goes in) */}
-        <Rect
-          x={bin.x + (bin.width - bin.openingWidth) / 2}
-          y={bin.openingY + 3}
-          width={bin.openingWidth}
-          height={12}
-          rx={3}
-          fill="#1A1A1A"
-        />
-        
-        {/* Rim highlights */}
-        <Rect
-          x={bin.x}
-          y={bin.openingY + 2}
-          width={8}
-          height={14}
-          rx={2}
-          fill="#546E7A"
-        />
-        <Rect
-          x={bin.x + bin.width - 8}
-          y={bin.openingY + 2}
-          width={8}
-          height={14}
-          rx={2}
-          fill="#546E7A"
-        />
+        )}
       </G>
     );
   };
