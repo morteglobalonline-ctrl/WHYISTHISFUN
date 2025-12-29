@@ -513,12 +513,30 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   }, [currentLevel]);
 
   // Touch handlers
+  const isInLauncherArea = useCallback((x: number, y: number) => {
+    // Check if touch is within the launcher hitbox (expanded area for easier grabbing)
+    const launcherHitboxWidth = 90;
+    const launcherHitboxHeight = 80;
+    return (
+      x >= launcherX - launcherHitboxWidth / 2 &&
+      x <= launcherX + launcherHitboxWidth / 2 &&
+      y >= LAUNCHER_Y - launcherHitboxHeight &&
+      y <= LAUNCHER_Y + 30
+    );
+  }, [launcherX, LAUNCHER_Y]);
+
   const onTouchStart = useCallback((e: any) => {
     if (gameState === 'setup') return;
     
     const touch = e.nativeEvent.touches?.[0] || e.nativeEvent;
     const x = touch.locationX ?? touch.pageX ?? touch.clientX ?? 0;
     const y = touch.locationY ?? touch.pageY ?? touch.clientY ?? 0;
+
+    // Check if touching the launcher area (for dragging)
+    if ((gameState === 'ready' || gameState === 'flying') && isInLauncherArea(x, y)) {
+      setIsDraggingLauncher(true);
+      return;
+    }
 
     if (gameState === 'ready') {
       spawnProjectile();
@@ -528,19 +546,31 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       setAimStart({ x, y });
       setAimEnd({ x, y });
     }
-  }, [gameState, spawnProjectile]);
+  }, [gameState, spawnProjectile, isInLauncherArea]);
 
   const onTouchMove = useCallback((e: any) => {
-    if (gameState !== 'aiming' || !aimStart) return;
-
     const touch = e.nativeEvent.touches?.[0] || e.nativeEvent;
     const x = touch.locationX ?? touch.pageX ?? touch.clientX ?? 0;
     const y = touch.locationY ?? touch.pageY ?? touch.clientY ?? 0;
 
+    // Handle launcher dragging
+    if (isDraggingLauncher) {
+      const newX = Math.max(LAUNCHER_MIN_X, Math.min(LAUNCHER_MAX_X, x));
+      setLauncherX(newX);
+      return;
+    }
+
+    if (gameState !== 'aiming' || !aimStart) return;
     setAimEnd({ x, y });
-  }, [gameState, aimStart]);
+  }, [gameState, aimStart, isDraggingLauncher, LAUNCHER_MIN_X, LAUNCHER_MAX_X]);
 
   const onTouchEnd = useCallback(() => {
+    // End launcher dragging
+    if (isDraggingLauncher) {
+      setIsDraggingLauncher(false);
+      return;
+    }
+
     if (gameState !== 'aiming' || !aimStart || !aimEnd) return;
 
     const dx = aimStart.x - aimEnd.x;
@@ -559,7 +589,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       setProjectile(null);
       setGameState('ready');
     }
-  }, [gameState, aimStart, aimEnd, launchProjectile]);
+  }, [gameState, aimStart, aimEnd, launchProjectile, isDraggingLauncher]);
 
   // Calculate aim arrow
   const getAimArrow = useCallback(() => {
