@@ -744,14 +744,12 @@ export default function PattyDisposalGame() {
     };
   }, [aimStart, aimEnd, gameState, GAME_HEIGHT, GAME_WIDTH]);
 
-  // Render patty
-  const renderPatty = () => {
+  // Render item based on selected item type
+  const renderItem = () => {
     if (!activePatty) return null;
     
     const p = activePatty;
-    // Spoiled patty - greenish brown
-    const baseColor = '#6B5344';
-    const spoiledTint = 'rgba(80, 100, 60, 0.4)';
+    const item = currentItem;
     
     return (
       <G transform={`translate(${p.x}, ${p.y}) rotate(${p.rotation * 180 / Math.PI})`}>
@@ -760,28 +758,90 @@ export default function PattyDisposalGame() {
           cx={0}
           cy={p.height + 12}
           rx={p.radius * 0.85}
-          ry={p.height * 0.6}
+          ry={p.height * 0.5}
           fill="rgba(0,0,0,0.25)"
         />
-        {/* Patty body */}
-        <Ellipse
-          cx={0}
-          cy={0}
-          rx={p.radius}
-          ry={p.height}
-          fill={baseColor}
-        />
-        {/* Spoiled spots */}
-        <Ellipse cx={-15} cy={-5} rx={10} ry={6} fill={spoiledTint} />
-        <Ellipse cx={12} cy={-2} rx={8} ry={5} fill={spoiledTint} />
-        <Ellipse cx={-5} cy={8} rx={12} ry={6} fill={spoiledTint} />
-        <Ellipse cx={20} cy={6} rx={7} ry={4} fill={spoiledTint} />
-        {/* Texture */}
-        <Ellipse cx={-20} cy={-3} rx={6} ry={4} fill="rgba(60, 45, 35, 0.5)" />
-        <Ellipse cx={15} cy={8} rx={5} ry={3} fill="rgba(60, 45, 35, 0.5)" />
-        <Ellipse cx={0} cy={-8} rx={7} ry={4} fill="rgba(60, 45, 35, 0.4)" />
-        {/* Highlight */}
-        <Ellipse cx={-10} cy={-10} rx={10} ry={5} fill="rgba(255,255,255,0.08)" />
+        
+        {/* Item-specific rendering */}
+        {item.id === 'patty' && (
+          <>
+            <Ellipse cx={0} cy={0} rx={p.radius} ry={p.height} fill={item.colors.primary} />
+            <Ellipse cx={-15} cy={-5} rx={10} ry={6} fill={item.colors.secondary} />
+            <Ellipse cx={12} cy={-2} rx={8} ry={5} fill={item.colors.secondary} />
+            <Ellipse cx={-5} cy={8} rx={12} ry={6} fill={item.colors.secondary} />
+            <Ellipse cx={20} cy={6} rx={7} ry={4} fill={item.colors.secondary} />
+            <Ellipse cx={-10} cy={-10} rx={10} ry={5} fill="rgba(255,255,255,0.08)" />
+          </>
+        )}
+        
+        {item.id === 'money' && (
+          <>
+            <Rect x={-p.radius} y={-p.height} width={p.radius * 2} height={p.height * 2} rx={4} fill={item.colors.primary} />
+            <Rect x={-p.radius + 3} y={-p.height + 3} width={p.radius * 2 - 6} height={p.height * 2 - 6} rx={2} fill={item.colors.secondary} />
+            <Circle cx={0} cy={0} r={p.radius * 0.4} fill={item.colors.accent} />
+            <Text x={0} y={5} textAnchor="middle" fill={item.colors.secondary} fontSize={16} fontWeight="bold">$</Text>
+            <Rect x={-p.radius + 5} y={-p.height + 6} width={8} height={4} fill={item.colors.accent} />
+            <Rect x={p.radius - 13} y={p.height - 10} width={8} height={4} fill={item.colors.accent} />
+          </>
+        )}
+        
+        {item.id === 'poop' && (
+          <>
+            {/* Poop swirl shape */}
+            <Ellipse cx={0} cy={p.height * 0.3} rx={p.radius * 0.9} ry={p.height * 0.4} fill={item.colors.primary} />
+            <Ellipse cx={0} cy={-p.height * 0.1} rx={p.radius * 0.7} ry={p.height * 0.35} fill={item.colors.primary} />
+            <Ellipse cx={0} cy={-p.height * 0.45} rx={p.radius * 0.5} ry={p.height * 0.3} fill={item.colors.primary} />
+            <Ellipse cx={0} cy={-p.height * 0.7} rx={p.radius * 0.25} ry={p.height * 0.2} fill={item.colors.primary} />
+            {/* Eyes */}
+            <Circle cx={-10} cy={-5} r={6} fill="white" />
+            <Circle cx={10} cy={-5} r={6} fill="white" />
+            <Circle cx={-8} cy={-4} r={3} fill="#333" />
+            <Circle cx={12} cy={-4} r={3} fill="#333" />
+            {/* Highlight */}
+            <Ellipse cx={-15} cy={-p.height * 0.3} rx={5} ry={3} fill={item.colors.accent} opacity={0.5} />
+          </>
+        )}
+        
+        {item.id === 'teddy' && (
+          <>
+            {/* Body */}
+            <Ellipse cx={0} cy={p.height * 0.2} rx={p.radius * 0.8} ry={p.height * 0.5} fill={item.colors.primary} />
+            {/* Head */}
+            <Circle cx={0} cy={-p.height * 0.3} r={p.radius * 0.6} fill={item.colors.primary} />
+            {/* Ears */}
+            <Circle cx={-p.radius * 0.45} cy={-p.height * 0.6} r={p.radius * 0.25} fill={item.colors.primary} />
+            <Circle cx={p.radius * 0.45} cy={-p.height * 0.6} r={p.radius * 0.25} fill={item.colors.primary} />
+            <Circle cx={-p.radius * 0.45} cy={-p.height * 0.6} r={p.radius * 0.15} fill={item.colors.secondary} />
+            <Circle cx={p.radius * 0.45} cy={-p.height * 0.6} r={p.radius * 0.15} fill={item.colors.secondary} />
+            {/* Snout */}
+            <Ellipse cx={0} cy={-p.height * 0.15} rx={p.radius * 0.3} ry={p.height * 0.2} fill={item.colors.accent} />
+            {/* Eyes */}
+            <Circle cx={-12} cy={-p.height * 0.4} r={4} fill="#333" />
+            <Circle cx={12} cy={-p.height * 0.4} r={4} fill="#333" />
+            {/* Nose */}
+            <Circle cx={0} cy={-p.height * 0.2} r={5} fill="#333" />
+            {/* Arms */}
+            <Ellipse cx={-p.radius * 0.7} cy={p.height * 0.1} rx={p.radius * 0.25} ry={p.height * 0.3} fill={item.colors.primary} />
+            <Ellipse cx={p.radius * 0.7} cy={p.height * 0.1} rx={p.radius * 0.25} ry={p.height * 0.3} fill={item.colors.primary} />
+          </>
+        )}
+        
+        {item.id === 'phone' && (
+          <>
+            {/* Phone body */}
+            <Rect x={-p.radius * 0.6} y={-p.height * 0.5} width={p.radius * 1.2} height={p.height} rx={6} fill={item.colors.primary} />
+            {/* Screen */}
+            <Rect x={-p.radius * 0.5} y={-p.height * 0.4} width={p.radius} height={p.height * 0.7} rx={3} fill="#1A1A1A" />
+            {/* Crack lines */}
+            <Line x1={-p.radius * 0.4} y1={-p.height * 0.3} x2={p.radius * 0.3} y2={p.height * 0.2} stroke="#666" strokeWidth={2} />
+            <Line x1={p.radius * 0.2} y1={-p.height * 0.35} x2={-p.radius * 0.2} y2={p.height * 0.15} stroke="#666" strokeWidth={1.5} />
+            <Line x1={-p.radius * 0.3} y1={0} x2={p.radius * 0.4} y2={p.height * 0.1} stroke="#666" strokeWidth={1} />
+            {/* Home button */}
+            <Circle cx={0} cy={p.height * 0.38} r={5} fill={item.colors.accent} />
+            {/* Camera */}
+            <Circle cx={0} cy={-p.height * 0.45} r={3} fill={item.colors.accent} />
+          </>
+        )}
       </G>
     );
   };
