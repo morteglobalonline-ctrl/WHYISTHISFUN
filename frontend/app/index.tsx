@@ -406,7 +406,7 @@ export default function PattyDisposalGame() {
     }
     
     return 'none';
-  }, [trashBin]);
+  }, [targetPosition]);
 
   // Physics update
   const updatePhysics = useCallback(() => {
