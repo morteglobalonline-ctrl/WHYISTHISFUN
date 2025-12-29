@@ -169,6 +169,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   // Refs
   const gameLoopRef = useRef<number | null>(null);
   const headshotsRef = useRef(0);
+  const hasStartedPlayingRef = useRef(false);
 
   const levelConfig = LEVEL_CONFIGS[currentLevel] || LEVEL_CONFIGS[0];
   const currentItem = CRAZY_HEAD_ITEMS.find(i => i.id === selectedItemId) || CRAZY_HEAD_ITEMS[0];
