@@ -451,10 +451,11 @@ export default function BurgerDropGame() {
     restartLevel();
   };
 
-  // Drawing gesture
+  // Drawing gesture - using Pan gesture for touch input
   const panGesture = Gesture.Pan()
     .minDistance(1)
-    .onStart((e) => {
+    .onBegin((e) => {
+      console.log('Pan gesture started:', e.x, e.y);
       if (gameState === 'win' || gameState === 'fail') return;
       setIsDrawing(true);
       setCurrentPath([{ x: e.x, y: e.y }]);
@@ -477,7 +478,8 @@ export default function BurgerDropGame() {
         setCurrentDrawLength(previousLength + totalLength);
       }
     })
-    .onEnd(() => {
+    .onFinalize(() => {
+      console.log('Pan gesture ended, path length:', currentPath.length);
       if (!isDrawing || currentPath.length < 2) {
         setIsDrawing(false);
         setCurrentPath([]);
