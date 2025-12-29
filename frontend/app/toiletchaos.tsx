@@ -74,6 +74,8 @@ export default function ToiletChaosGame({ onBack }: ToiletChaosProps) {
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [showScore, setShowScore] = useState(false);
   const [score, setScore] = useState(0);
+  const [bestPass, setBestPass] = useState(0);
+  const [isNewRecord, setIsNewRecord] = useState(false);
 
   // Player state
   const [playerY, setPlayerY] = useState(GAME_HEIGHT / 2);
@@ -94,8 +96,37 @@ export default function ToiletChaosGame({ onBack }: ToiletChaosProps) {
   const obstaclesRef = useRef<Obstacle[]>([]);
   const scoreRef = useRef(0);
   const gameTimeRef = useRef(0);
+  const bestPassRef = useRef(0);
 
   const currentChar = CHARACTERS.find(c => c.id === selectedCharacter) || CHARACTERS[0];
+
+  // Load best pass from storage on mount
+  useEffect(() => {
+    const loadBestPass = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(BEST_PASS_KEY);
+        if (stored !== null) {
+          const value = parseInt(stored, 10);
+          setBestPass(value);
+          bestPassRef.current = value;
+        }
+      } catch (e) {
+        console.log('Failed to load best pass:', e);
+      }
+    };
+    loadBestPass();
+  }, []);
+
+  // Save best pass to storage
+  const saveBestPass = useCallback(async (newBest: number) => {
+    try {
+      await AsyncStorage.setItem(BEST_PASS_KEY, newBest.toString());
+      setBestPass(newBest);
+      bestPassRef.current = newBest;
+    } catch (e) {
+      console.log('Failed to save best pass:', e);
+    }
+  }, []);
 
   // Pick custom image for photo poop
   const pickCustomImage = async () => {
