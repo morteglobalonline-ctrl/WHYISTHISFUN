@@ -453,20 +453,29 @@ export default function BurgerDropGame() {
     restartLevel();
   };
 
-  // Drawing gesture - using Pan gesture for touch input
-  const panGesture = Gesture.Pan()
-    .minDistance(1)
-    .onBegin((e) => {
-      console.log('Pan gesture started:', e.x, e.y);
+  // Track current path in a ref for immediate access in PanResponder
+  const currentPathRef = useRef<Point[]>([]);
+  const isDrawingRef = useRef(false);
+
+  // Drawing with PanResponder for better web compatibility
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (event: GestureResponderEvent) => {
       if (gameState === 'win' || gameState === 'fail') return;
+      const { locationX, locationY } = event.nativeEvent;
+      console.log('Touch started:', locationX, locationY);
+      isDrawingRef.current = true;
       setIsDrawing(true);
-      setCurrentPath([{ x: e.x, y: e.y }]);
-    })
-    .onUpdate((e) => {
-      if (!isDrawing || gameState === 'win' || gameState === 'fail') return;
+      currentPathRef.current = [{ x: locationX, y: locationY }];
+      setCurrentPath([{ x: locationX, y: locationY }]);
+    },
+    onPanResponderMove: (event: GestureResponderEvent) => {
+      if (!isDrawingRef.current || gameState === 'win' || gameState === 'fail') return;
       
-      const newPoint = { x: e.x, y: e.y };
-      const newPath = [...currentPath, newPoint];
+      const { locationX, locationY } = event.nativeEvent;
+      const newPoint = { x: locationX, y: locationY };
+      const newPath = [...currentPathRef.current, newPoint];
       const totalLength = calculatePathLength(newPath);
       
       // Calculate total drawn length including previous shapes
@@ -476,14 +485,17 @@ export default function BurgerDropGame() {
       );
       
       if (previousLength + totalLength <= MAX_DRAW_LENGTH) {
+        currentPathRef.current = newPath;
         setCurrentPath(newPath);
         setCurrentDrawLength(previousLength + totalLength);
       }
-    })
-    .onFinalize(() => {
-      console.log('Pan gesture ended, path length:', currentPath.length);
-      if (!isDrawing || currentPath.length < 2) {
+    },
+    onPanResponderRelease: () => {
+      console.log('Touch released, path length:', currentPathRef.current.length);
+      if (!isDrawingRef.current || currentPathRef.current.length < 2) {
+        isDrawingRef.current = false;
         setIsDrawing(false);
+        currentPathRef.current = [];
         setCurrentPath([]);
         return;
       }
@@ -493,7 +505,7 @@ export default function BurgerDropGame() {
         maxX = -Infinity,
         minY = Infinity,
         maxY = -Infinity;
-      currentPath.forEach((p) => {
+      currentPathRef.current.forEach((p) => {
         minX = Math.min(minX, p.x);
         maxX = Math.max(maxX, p.x);
         minY = Math.min(minY, p.y);
@@ -502,19 +514,28 @@ export default function BurgerDropGame() {
 
       const newShape: DrawnShape = {
         id: Date.now().toString(),
-        points: currentPath,
+        points: [...currentPathRef.current],
         bounds: { minX, maxX, minY, maxY },
       };
 
-      setDrawnShapes([...drawnShapes, newShape]);
+      setDrawnShapes((prev) => [...prev, newShape]);
+      isDrawingRef.current = false;
       setIsDrawing(false);
+      currentPathRef.current = [];
       setCurrentPath([]);
 
       // Auto-start game after first draw if ready
       if (gameState === 'ready') {
         startGame();
       }
-    });
+    },
+    onPanResponderTerminate: () => {
+      isDrawingRef.current = false;
+      setIsDrawing(false);
+      currentPathRef.current = [];
+      setCurrentPath([]);
+    },
+  }), [gameState, drawnShapes, startGame]);
 
   // Pick background image
   const pickBackgroundImage = async () => {
