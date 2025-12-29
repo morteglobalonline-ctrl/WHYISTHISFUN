@@ -341,28 +341,41 @@ export default function BurgerStackGame() {
 
     // Check target collision (stacking)
     const targetCheck = checkTargetCollision(p, stack);
-    if (targetCheck.onTarget && p.y + p.height / 2 >= targetCheck.restY + p.height / 2 - 10) {
+    if (targetCheck.onTarget) {
       // Land on target or stack
-      p.y = targetCheck.restY;
-      p.vy = -Math.abs(p.vy) * BOUNCE * 0.5;
-      p.vx *= GROUND_FRICTION;
+      p.y = Math.min(p.y, targetCheck.restY);
       p.isOnTarget = true;
       
-      // Apply stack damping
-      if (Math.abs(p.vy) < 3 && Math.abs(p.vx) < 2) {
-        p.vy *= STACK_DAMPING;
-        p.vx *= STACK_DAMPING;
-        p.rotationSpeed *= 0.8;
+      // Reduce bounce significantly when landing on target
+      if (p.vy > 0) {
+        p.vy = -Math.abs(p.vy) * BOUNCE * 0.3;
       }
+      p.vx *= GROUND_FRICTION;
+      
+      // Strong damping when on target to help settle
+      p.vy *= STACK_DAMPING;
+      p.vx *= STACK_DAMPING;
+      p.rotationSpeed *= 0.7;
+      
+      // Gradually center patty on target for stability
+      const targetCenterX = level.target.x + level.target.width / 2;
+      const driftToCenter = (targetCenterX - p.x) * 0.01;
+      p.x += driftToCenter;
       
       // Check if stable
-      if (Math.abs(p.vy) < 0.5 && Math.abs(p.vx) < 0.5) {
+      if (Math.abs(p.vy) < 1 && Math.abs(p.vx) < 1) {
         p.stableTime += 16; // ~60fps
+        
+        // Visual feedback - slow down more when almost stable
+        p.vy *= 0.9;
+        p.vx *= 0.9;
+        
         if (p.stableTime >= WIN_STABILITY_TIME && !p.isStacked) {
           // Patty is stacked!
           p.isStacked = true;
           p.vx = 0;
           p.vy = 0;
+          p.rotationSpeed = 0;
           
           // Add to stack
           const newStack = [...stack, p];
@@ -382,7 +395,7 @@ export default function BurgerStackGame() {
           return;
         }
       } else {
-        p.stableTime = 0;
+        p.stableTime = Math.max(0, p.stableTime - 8); // Slowly decrease if not stable
       }
     } else if (!panCheck.onPan) {
       p.isOnTarget = false;
