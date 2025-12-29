@@ -345,8 +345,8 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     setHeadOffset({ x: 0, y: 0 });
     setAimStart(null);
     setAimEnd(null);
-    setGameState(hasStartedPlaying ? 'ready' : 'setup');
-  }, [hasStartedPlaying]);
+    setGameState(hasStartedPlayingRef.current ? 'ready' : 'setup');
+  }, []);
 
   // Handle miss
   const handleMiss = useCallback(() => {
