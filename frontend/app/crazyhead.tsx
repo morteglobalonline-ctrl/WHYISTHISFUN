@@ -191,6 +191,13 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const [aimStart, setAimStart] = useState<Point | null>(null);
   const [aimEnd, setAimEnd] = useState<Point | null>(null);
 
+  // Movable launcher
+  const [launcherX, setLauncherX] = useState(GAME_WIDTH * 0.15);
+  const [isDraggingLauncher, setIsDraggingLauncher] = useState(false);
+  const LAUNCHER_Y = GAME_HEIGHT * 0.85;
+  const LAUNCHER_MIN_X = GAME_WIDTH * 0.1;
+  const LAUNCHER_MAX_X = GAME_WIDTH * 0.9;
+
   // Refs
   const gameLoopRef = useRef<number | null>(null);
   const headshotsRef = useRef(0);
