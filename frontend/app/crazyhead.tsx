@@ -206,10 +206,6 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const levelConfig = LEVEL_CONFIGS[currentLevel] || LEVEL_CONFIGS[0];
   const currentItem = CRAZY_HEAD_ITEMS.find(i => i.id === selectedItemId) || CRAZY_HEAD_ITEMS[0];
 
-  // Launcher position (bottom left)
-  const LAUNCHER_X = GAME_WIDTH * 0.15;
-  const LAUNCHER_Y = GAME_HEIGHT * 0.85;
-
   // Pick head image
   const pickHeadImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
