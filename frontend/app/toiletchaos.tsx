@@ -327,6 +327,14 @@ export default function ToiletChaosGame({ onBack }: ToiletChaosProps) {
       if (checkCollision(playerYRef.current, recycledObstacles)) {
         // Splat!
         setSquishFactor(1.5); // Squash effect
+        
+        // Check for new high score
+        const finalScore = scoreRef.current;
+        if (finalScore > bestPassRef.current) {
+          setIsNewRecord(true);
+          saveBestPass(finalScore);
+        }
+        
         setGameState('splat');
         return;
       }
@@ -346,7 +354,7 @@ export default function ToiletChaosGame({ onBack }: ToiletChaosProps) {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameState, currentChar, checkCollision, GAME_HEIGHT]);
+  }, [gameState, currentChar, checkCollision, GAME_HEIGHT, saveBestPass]);
 
   // Render 3D Poop character
   const renderPoopCharacter = (x: number, y: number, rotation: number, squish: number) => {
