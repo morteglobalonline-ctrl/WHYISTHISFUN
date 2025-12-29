@@ -440,20 +440,6 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     };
   }, [gameState, updatePhysics]);
 
-  // Restart level
-  const restartLevel = useCallback(() => {
-    setHeadshots(0);
-    headshotsRef.current = 0;
-    setProjectile(null);
-    projectileRef.current = null;
-    setHitEffects([]);
-    setReactionType(null);
-    setHeadOffset({ x: 0, y: 0 });
-    setAimStart(null);
-    setAimEnd(null);
-    setGameState(hasStartedPlaying ? 'ready' : 'setup');
-  }, [hasStartedPlaying]);
-
   // Next level
   const nextLevel = useCallback(() => {
     if (currentLevel < TOTAL_LEVELS - 1) {
