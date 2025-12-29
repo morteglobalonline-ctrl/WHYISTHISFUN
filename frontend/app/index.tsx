@@ -263,12 +263,12 @@ export default function PattyDisposalGame() {
   // Get current level config
   const levelConfig = LEVEL_CONFIGS[currentLevel] || LEVEL_CONFIGS[0];
 
-  // Calculate trash bin position based on level
-  const getTrashBin = useCallback((): TrashBin => {
+  // Calculate target position based on level (uses selected target's opening width)
+  const getTargetPosition = useCallback((): TrashBin => {
     const baseY = GAME_HEIGHT - 180;
     const binWidth = 100;
     const binHeight = 120;
-    const openingWidth = 75;
+    const openingWidth = binWidth * currentTarget.openingWidthRatio;
     
     return {
       x: GAME_WIDTH * 0.75 - binWidth / 2,
@@ -278,9 +278,9 @@ export default function PattyDisposalGame() {
       openingWidth: openingWidth,
       openingY: baseY + levelConfig.binYOffset,
     };
-  }, [GAME_WIDTH, GAME_HEIGHT, levelConfig.binYOffset]);
+  }, [GAME_WIDTH, GAME_HEIGHT, levelConfig.binYOffset, currentTarget.openingWidthRatio]);
 
-  const trashBin = getTrashBin();
+  const targetPosition = getTargetPosition();
 
   // Initialize pan position
   useEffect(() => {
