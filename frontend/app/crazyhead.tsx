@@ -149,6 +149,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const [showFocusSelector, setShowFocusSelector] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [tempFocusPoint, setTempFocusPoint] = useState<Point>({ x: 0.5, y: 0.5 });
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
 
   // Projectile
   const [projectile, setProjectile] = useState<Projectile | null>(null);
