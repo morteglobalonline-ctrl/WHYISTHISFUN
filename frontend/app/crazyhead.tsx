@@ -628,6 +628,20 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         {/* Hit effects on face */}
         {hitEffects.map(effect => renderHitEffect(effect, headX, headY))}
 
+        {/* DEBUG: Hitbox visualization */}
+        {DEBUG_SHOW_HITBOX && (
+          <Circle 
+            cx={headX} 
+            cy={headY} 
+            r={HEAD_CENTER_HITBOX} 
+            fill="none" 
+            stroke="red" 
+            strokeWidth={2} 
+            strokeDasharray="5,5" 
+            opacity={0.8}
+          />
+        )}
+
         {/* Reaction effects */}
         {reactionType === 'slap' && (
           <G>
