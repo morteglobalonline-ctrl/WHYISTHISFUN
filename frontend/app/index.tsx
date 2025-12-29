@@ -8,31 +8,37 @@ import {
   Alert,
   Platform,
   useWindowDimensions,
+  Modal,
+  ScrollView,
+  Pressable,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import Svg, { Path, Circle, Rect, G, Polygon, Ellipse } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, G, Ellipse, Line } from 'react-native-svg';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
 
 // Physics constants
-const GRAVITY = 0.5;
-const FRICTION = 0.98;
-const BOUNCE = 0.3;
-const PATTY_RADIUS = 25;
-const MAX_DRAW_LENGTH = 500;
+const GRAVITY = 0.6;
+const FRICTION = 0.99;
+const BOUNCE = 0.6;
+const PAN_BOUNCE = 0.7;
+const PATTY_RADIUS = 35;
 const WIN_STABILITY_TIME = 1000; // 1 second
-const FAIL_REST_TIME = 3000; // 3 seconds
+const SPAWN_DELAY = 1200; // ms before next patty spawns
+
+// Built-in background options
+const BUILT_IN_BACKGROUNDS = [
+  { id: 'kitchen', name: 'Kitchen', color: '#8B5A2B' },
+  { id: 'restaurant', name: 'Restaurant', color: '#4A3728' },
+  { id: 'outdoor', name: 'Outdoor BBQ', color: '#2E5A3C' },
+  { id: 'night', name: 'Night Kitchen', color: '#1A1A2E' },
+];
 
 interface Point {
   x: number;
   y: number;
-}
-
-interface DrawnShape {
-  id: string;
-  points: Point[];
-  bounds: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
 interface Patty {
@@ -41,20 +47,29 @@ interface Patty {
   vx: number;
   vy: number;
   radius: number;
-  isActive: boolean;
-  brownLevel: number; // 0-1 for browning effect
+  rotation: number;
+  rotationSpeed: number;
+  brownLevel: number;
 }
 
-interface Hazard {
-  type: 'knife' | 'fire' | 'grill';
+interface Pan {
   x: number;
   y: number;
   width: number;
   height: number;
-  rotation?: number;
+  tilt: number; // -1 to 1 for tilt angle
+  vx: number;
 }
 
 interface Target {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface Hazard {
+  type: 'grill' | 'knife';
   x: number;
   y: number;
   width: number;
@@ -67,90 +82,93 @@ interface Level {
   dispenserY: number;
   target: Target;
   hazards: Hazard[];
-  obstacles: { x: number; y: number; width: number; height: number }[];
+  panStartX: number;
 }
 
 const TOTAL_LEVELS = 5;
 
-export default function BurgerDropGame() {
+export default function BurgerFlipGame() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const GAME_WIDTH = windowWidth;
   const GAME_HEIGHT = windowHeight;
-  
+
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [gameState, setGameState] = useState<'ready' | 'playing' | 'win' | 'fail'>('ready');
+  const [gameState, setGameState] = useState<'waiting' | 'playing' | 'win' | 'fail'>('waiting');
   const [patty, setPatty] = useState<Patty | null>(null);
-  const [drawnShapes, setDrawnShapes] = useState<DrawnShape[]>([]);
-  const [currentPath, setCurrentPath] = useState<Point[]>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [showMenu, setShowMenu] = useState(false);
-  const [currentDrawLength, setCurrentDrawLength] = useState(0);
+  const [pan, setPan] = useState<Pan>({
+    x: GAME_WIDTH / 2,
+    y: GAME_HEIGHT * 0.65,
+    width: 120,
+    height: 25,
+    tilt: 0,
+    vx: 0,
+  });
   
+  // Background settings
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [backgroundColor, setBackgroundColor] = useState('#8B5A2B');
+  const [backgroundMode, setBackgroundMode] = useState<'fill' | 'fit'>('fill');
+  const [backgroundBrightness, setBackgroundBrightness] = useState(1);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Refs for physics
   const gameLoopRef = useRef<number | null>(null);
   const pattyRef = useRef<Patty | null>(null);
+  const panRef = useRef<Pan>(pan);
   const winTimerRef = useRef<number | null>(null);
-  const failTimerRef = useRef<number | null>(null);
-  const lastUpdateRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
+  const lastTouchXRef = useRef(0);
+  const spawnTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Generate level based on current dimensions
   const getLevelConfig = useCallback((levelIndex: number): Level => {
     const configs: Level[] = [
       {
         id: 1,
-        dispenserX: GAME_WIDTH * 0.3,
-        dispenserY: 80,
-        target: { x: GAME_WIDTH * 0.6, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        dispenserX: GAME_WIDTH * 0.5,
+        dispenserY: 60,
+        target: { x: GAME_WIDTH * 0.7, y: GAME_HEIGHT - 140, width: 100, height: 45 },
         hazards: [],
-        obstacles: [],
+        panStartX: GAME_WIDTH * 0.3,
       },
       {
         id: 2,
-        dispenserX: GAME_WIDTH * 0.2,
-        dispenserY: 80,
-        target: { x: GAME_WIDTH * 0.7, y: GAME_HEIGHT - 180, width: 100, height: 40 },
-        hazards: [
-          { type: 'knife', x: GAME_WIDTH * 0.5, y: GAME_HEIGHT * 0.5, width: 120, height: 30, rotation: -30 },
-        ],
-        obstacles: [],
+        dispenserX: GAME_WIDTH * 0.3,
+        dispenserY: 60,
+        target: { x: GAME_WIDTH * 0.75, y: GAME_HEIGHT - 140, width: 100, height: 45 },
+        hazards: [],
+        panStartX: GAME_WIDTH * 0.4,
       },
       {
         id: 3,
         dispenserX: GAME_WIDTH * 0.5,
-        dispenserY: 80,
-        target: { x: GAME_WIDTH * 0.5, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        dispenserY: 60,
+        target: { x: GAME_WIDTH * 0.8 - 50, y: GAME_HEIGHT - 140, width: 100, height: 45 },
         hazards: [
-          { type: 'knife', x: GAME_WIDTH * 0.25, y: GAME_HEIGHT * 0.4, width: 100, height: 25, rotation: 45 },
-          { type: 'knife', x: GAME_WIDTH * 0.75, y: GAME_HEIGHT * 0.4, width: 100, height: 25, rotation: -45 },
+          { type: 'grill', x: GAME_WIDTH * 0.5, y: GAME_HEIGHT * 0.85, width: 100, height: 20 },
         ],
-        obstacles: [
-          { x: GAME_WIDTH * 0.4, y: GAME_HEIGHT * 0.6, width: 80, height: 15 },
-        ],
+        panStartX: GAME_WIDTH * 0.25,
       },
       {
         id: 4,
-        dispenserX: GAME_WIDTH * 0.8,
-        dispenserY: 80,
-        target: { x: GAME_WIDTH * 0.2, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        dispenserX: GAME_WIDTH * 0.7,
+        dispenserY: 60,
+        target: { x: GAME_WIDTH * 0.2, y: GAME_HEIGHT - 140, width: 100, height: 45 },
         hazards: [
-          { type: 'fire', x: GAME_WIDTH * 0.5, y: GAME_HEIGHT * 0.7, width: 80, height: 60 },
-          { type: 'knife', x: GAME_WIDTH * 0.3, y: GAME_HEIGHT * 0.35, width: 100, height: 25, rotation: 20 },
+          { type: 'grill', x: GAME_WIDTH * 0.5, y: GAME_HEIGHT * 0.8, width: 80, height: 20 },
         ],
-        obstacles: [],
+        panStartX: GAME_WIDTH * 0.6,
       },
       {
         id: 5,
-        dispenserX: GAME_WIDTH * 0.15,
-        dispenserY: 80,
-        target: { x: GAME_WIDTH * 0.85 - 50, y: GAME_HEIGHT - 180, width: 100, height: 40 },
+        dispenserX: GAME_WIDTH * 0.4,
+        dispenserY: 60,
+        target: { x: GAME_WIDTH * 0.85 - 50, y: GAME_HEIGHT - 140, width: 100, height: 45 },
         hazards: [
-          { type: 'knife', x: GAME_WIDTH * 0.4, y: GAME_HEIGHT * 0.3, width: 110, height: 28, rotation: -15 },
-          { type: 'fire', x: GAME_WIDTH * 0.6, y: GAME_HEIGHT * 0.55, width: 70, height: 55 },
-          { type: 'knife', x: GAME_WIDTH * 0.3, y: GAME_HEIGHT * 0.65, width: 90, height: 22, rotation: 40 },
+          { type: 'grill', x: GAME_WIDTH * 0.3, y: GAME_HEIGHT * 0.75, width: 70, height: 18 },
+          { type: 'grill', x: GAME_WIDTH * 0.65, y: GAME_HEIGHT * 0.85, width: 70, height: 18 },
         ],
-        obstacles: [
-          { x: GAME_WIDTH * 0.6, y: GAME_HEIGHT * 0.4, width: 70, height: 12 },
-        ],
+        panStartX: GAME_WIDTH * 0.35,
       },
     ];
     return configs[levelIndex] || configs[0];
@@ -158,54 +176,94 @@ export default function BurgerDropGame() {
 
   const level = getLevelConfig(currentLevel);
 
-  // Calculate path length
-  const calculatePathLength = (points: Point[]): number => {
-    let length = 0;
-    for (let i = 1; i < points.length; i++) {
-      const dx = points[i].x - points[i - 1].x;
-      const dy = points[i].y - points[i - 1].y;
-      length += Math.sqrt(dx * dx + dy * dy);
-    }
-    return length;
-  };
+  // Initialize pan position for current level
+  useEffect(() => {
+    const newPan = {
+      x: level.panStartX,
+      y: GAME_HEIGHT * 0.65,
+      width: 120,
+      height: 25,
+      tilt: 0,
+      vx: 0,
+    };
+    setPan(newPan);
+    panRef.current = newPan;
+  }, [currentLevel, level.panStartX, GAME_HEIGHT]);
 
-  // Check collision between patty and line segment
-  const lineCircleCollision = (
-    cx: number,
-    cy: number,
-    radius: number,
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number
-  ): { collides: boolean; normal: Point; penetration: number } => {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const lengthSq = dx * dx + dy * dy;
+  // Spawn patty from dispenser
+  const spawnPatty = useCallback(() => {
+    const newPatty: Patty = {
+      x: level.dispenserX,
+      y: level.dispenserY + 50,
+      vx: (Math.random() - 0.5) * 2,
+      vy: 2,
+      radius: PATTY_RADIUS,
+      rotation: 0,
+      rotationSpeed: (Math.random() - 0.5) * 0.1,
+      brownLevel: 0,
+    };
+    pattyRef.current = newPatty;
+    setPatty(newPatty);
+    setGameState('playing');
+    winTimerRef.current = null;
+  }, [level.dispenserX, level.dispenserY]);
+
+  // Start game / spawn first patty
+  const startGame = useCallback(() => {
+    if (gameState === 'waiting') {
+      spawnPatty();
+    }
+  }, [gameState, spawnPatty]);
+
+  // Auto-start after delay
+  useEffect(() => {
+    if (gameState === 'waiting') {
+      spawnTimerRef.current = setTimeout(() => {
+        spawnPatty();
+      }, SPAWN_DELAY);
+    }
+    return () => {
+      if (spawnTimerRef.current) {
+        clearTimeout(spawnTimerRef.current);
+      }
+    };
+  }, [gameState, spawnPatty]);
+
+  // Check collision between patty and pan
+  const checkPanCollision = useCallback((p: Patty, panState: Pan): { collides: boolean; normal: Point; overlap: number } => {
+    // Pan top surface (with tilt)
+    const panLeft = panState.x - panState.width / 2;
+    const panRight = panState.x + panState.width / 2;
+    const panTop = panState.y - panState.height / 2;
+    const tiltOffset = panState.tilt * 15; // Max tilt offset
     
-    let t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lengthSq));
+    // Check if patty is above pan area horizontally
+    if (p.x + p.radius < panLeft || p.x - p.radius > panRight) {
+      return { collides: false, normal: { x: 0, y: 0 }, overlap: 0 };
+    }
     
-    const closestX = x1 + t * dx;
-    const closestY = y1 + t * dy;
+    // Calculate pan surface Y at patty X position
+    const relativeX = (p.x - panState.x) / (panState.width / 2);
+    const panSurfaceY = panTop - tiltOffset * relativeX;
     
-    const distX = cx - closestX;
-    const distY = cy - closestY;
-    const dist = Math.sqrt(distX * distX + distY * distY);
+    // Check vertical collision
+    const distToSurface = p.y + p.radius - panSurfaceY;
     
-    if (dist < radius) {
-      const normalLength = dist || 1;
+    if (distToSurface > 0 && distToSurface < p.radius * 2 && p.vy > 0) {
+      // Calculate normal based on tilt
+      const normalAngle = Math.atan2(-tiltOffset, panState.width / 2);
       return {
         collides: true,
-        normal: { x: distX / normalLength, y: distY / normalLength },
-        penetration: radius - dist,
+        normal: { x: Math.sin(normalAngle), y: -Math.cos(normalAngle) },
+        overlap: distToSurface,
       };
     }
     
-    return { collides: false, normal: { x: 0, y: 0 }, penetration: 0 };
-  };
+    return { collides: false, normal: { x: 0, y: 0 }, overlap: 0 };
+  }, []);
 
-  // Check collision with rectangle
-  const rectCircleCollision = (
+  // Check collision with rectangle (for target and hazards)
+  const rectCircleCollision = useCallback((
     cx: number,
     cy: number,
     radius: number,
@@ -213,31 +271,20 @@ export default function BurgerDropGame() {
     ry: number,
     rw: number,
     rh: number
-  ): { collides: boolean; normal: Point; penetration: number } => {
+  ): boolean => {
     const closestX = Math.max(rx, Math.min(cx, rx + rw));
     const closestY = Math.max(ry, Math.min(cy, ry + rh));
-    
     const distX = cx - closestX;
     const distY = cy - closestY;
-    const dist = Math.sqrt(distX * distX + distY * distY);
-    
-    if (dist < radius) {
-      const normalLength = dist || 1;
-      return {
-        collides: true,
-        normal: { x: distX / normalLength, y: distY / normalLength },
-        penetration: radius - dist,
-      };
-    }
-    
-    return { collides: false, normal: { x: 0, y: 0 }, penetration: 0 };
-  };
+    return (distX * distX + distY * distY) < (radius * radius);
+  }, []);
 
   // Physics update
   const updatePhysics = useCallback(() => {
     if (!pattyRef.current || gameState !== 'playing') return;
 
     const p = { ...pattyRef.current };
+    const panState = panRef.current;
     
     // Apply gravity
     p.vy += GRAVITY;
@@ -249,81 +296,30 @@ export default function BurgerDropGame() {
     // Apply friction
     p.vx *= FRICTION;
     
-    // Check collisions with drawn shapes
-    drawnShapes.forEach((shape) => {
-      for (let i = 1; i < shape.points.length; i++) {
-        const collision = lineCircleCollision(
-          p.x,
-          p.y,
-          p.radius,
-          shape.points[i - 1].x,
-          shape.points[i - 1].y,
-          shape.points[i].x,
-          shape.points[i].y
-        );
-        
-        if (collision.collides) {
-          // Push patty out of collision
-          p.x += collision.normal.x * collision.penetration;
-          p.y += collision.normal.y * collision.penetration;
-          
-          // Reflect velocity
-          const dot = p.vx * collision.normal.x + p.vy * collision.normal.y;
-          p.vx = (p.vx - 2 * dot * collision.normal.x) * BOUNCE;
-          p.vy = (p.vy - 2 * dot * collision.normal.y) * BOUNCE;
-        }
-      }
-    });
+    // Update rotation
+    p.rotation += p.rotationSpeed;
+    p.rotationSpeed *= 0.995;
 
-    // Check collisions with obstacles
-    level.obstacles.forEach((obs) => {
-      const collision = rectCircleCollision(
-        p.x,
-        p.y,
-        p.radius,
-        obs.x,
-        obs.y,
-        obs.width,
-        obs.height
-      );
+    // Check pan collision
+    const panCollision = checkPanCollision(p, panState);
+    if (panCollision.collides) {
+      // Push patty out
+      p.y -= panCollision.overlap;
       
-      if (collision.collides) {
-        p.x += collision.normal.x * collision.penetration;
-        p.y += collision.normal.y * collision.penetration;
-        
-        const dot = p.vx * collision.normal.x + p.vy * collision.normal.y;
-        p.vx = (p.vx - 2 * dot * collision.normal.x) * BOUNCE;
-        p.vy = (p.vy - 2 * dot * collision.normal.y) * BOUNCE;
-      }
-    });
-
-    // Check hazard collisions
-    for (const hazard of level.hazards) {
-      const collision = rectCircleCollision(
-        p.x,
-        p.y,
-        p.radius,
-        hazard.x - hazard.width / 2,
-        hazard.y - hazard.height / 2,
-        hazard.width,
-        hazard.height
-      );
+      // Apply pan velocity to patty (flip effect)
+      const flipForce = panState.vx * 0.5;
+      p.vx += flipForce;
       
-      if (collision.collides) {
-        if (hazard.type === 'fire') {
-          p.brownLevel = Math.min(1, p.brownLevel + 0.05);
-          if (p.brownLevel >= 1) {
-            handleFail();
-            return;
-          }
-        } else if (hazard.type === 'knife') {
-          handleFail();
-          return;
-        }
-      }
+      // Reflect velocity with tilt influence
+      const tiltBoost = panState.tilt * 8;
+      p.vy = -Math.abs(p.vy) * PAN_BOUNCE - 5 - Math.abs(panState.vx) * 0.3;
+      p.vx += tiltBoost;
+      
+      // Add rotation based on pan movement
+      p.rotationSpeed += panState.vx * 0.02;
     }
 
-    // Check screen bounds
+    // Check screen bounds (sides)
     if (p.x - p.radius < 0) {
       p.x = p.radius;
       p.vx = -p.vx * BOUNCE;
@@ -339,17 +335,31 @@ export default function BurgerDropGame() {
       return;
     }
 
-    // Check win condition
-    const target = level.target;
-    const isOnTarget =
-      p.x > target.x &&
-      p.x < target.x + target.width &&
-      p.y + p.radius > target.y &&
-      p.y + p.radius < target.y + target.height + 20;
+    // Check hazard collisions
+    for (const hazard of level.hazards) {
+      if (rectCircleCollision(p.x, p.y, p.radius, hazard.x - hazard.width/2, hazard.y - hazard.height/2, hazard.width, hazard.height)) {
+        p.brownLevel = 1; // Instant burn
+        handleFail();
+        return;
+      }
+    }
 
-    const isStable = Math.abs(p.vx) < 0.5 && Math.abs(p.vy) < 0.5;
+    // Check win condition - patty on target
+    const target = level.target;
+    const isOnTarget = rectCircleCollision(
+      p.x, p.y, p.radius,
+      target.x, target.y, target.width, target.height
+    );
+    
+    const isStable = Math.abs(p.vx) < 1 && Math.abs(p.vy) < 1 && p.y > target.y - p.radius;
 
     if (isOnTarget && isStable) {
+      // Keep patty on target
+      if (p.y < target.y) {
+        p.y = target.y + p.radius / 2;
+        p.vy = 0;
+      }
+      
       if (!winTimerRef.current) {
         winTimerRef.current = Date.now();
       } else if (Date.now() - winTimerRef.current >= WIN_STABILITY_TIME) {
@@ -360,21 +370,9 @@ export default function BurgerDropGame() {
       winTimerRef.current = null;
     }
 
-    // Check fail condition (resting in invalid position)
-    if (isStable && !isOnTarget && p.y > 100) {
-      if (!failTimerRef.current) {
-        failTimerRef.current = Date.now();
-      } else if (Date.now() - failTimerRef.current >= FAIL_REST_TIME) {
-        handleFail();
-        return;
-      }
-    } else if (!isStable) {
-      failTimerRef.current = null;
-    }
-
     pattyRef.current = p;
     setPatty(p);
-  }, [gameState, drawnShapes, level]);
+  }, [gameState, GAME_WIDTH, GAME_HEIGHT, level, checkPanCollision, rectCircleCollision]);
 
   // Game loop
   useEffect(() => {
@@ -393,168 +391,106 @@ export default function BurgerDropGame() {
     };
   }, [gameState, updatePhysics]);
 
-  const handleWin = () => {
+  const handleWin = useCallback(() => {
     setGameState('win');
     if (gameLoopRef.current) {
       cancelAnimationFrame(gameLoopRef.current);
     }
     setTimeout(() => {
       nextLevel();
-    }, 1000);
-  };
+    }, 1500);
+  }, []);
 
-  const handleFail = () => {
-    console.log('Game failed! Restarting in 1 second...');
+  const handleFail = useCallback(() => {
     setGameState('fail');
     if (gameLoopRef.current) {
       cancelAnimationFrame(gameLoopRef.current);
     }
     setTimeout(() => {
       restartLevel();
-    }, 1000);
-  };
+    }, 1500);
+  }, []);
 
-  const startGame = () => {
-    const newPatty: Patty = {
-      x: level.dispenserX,
-      y: level.dispenserY + 60,
-      vx: 0,
-      vy: 0,
-      radius: PATTY_RADIUS,
-      isActive: true,
-      brownLevel: 0,
-    };
-    pattyRef.current = newPatty;
-    setPatty(newPatty);
-    setGameState('playing');
-    winTimerRef.current = null;
-    failTimerRef.current = null;
-  };
-
-  const restartLevel = () => {
-    setDrawnShapes([]);
-    setCurrentPath([]);
-    setCurrentDrawLength(0);
+  const restartLevel = useCallback(() => {
     setPatty(null);
     pattyRef.current = null;
-    setGameState('ready');
+    const newPan = {
+      x: level.panStartX,
+      y: GAME_HEIGHT * 0.65,
+      width: 120,
+      height: 25,
+      tilt: 0,
+      vx: 0,
+    };
+    setPan(newPan);
+    panRef.current = newPan;
+    setGameState('waiting');
     winTimerRef.current = null;
-    failTimerRef.current = null;
-  };
+  }, [level.panStartX, GAME_HEIGHT]);
 
-  const nextLevel = () => {
+  const nextLevel = useCallback(() => {
     if (currentLevel < TOTAL_LEVELS - 1) {
       setCurrentLevel(currentLevel + 1);
     } else {
-      setCurrentLevel(0); // Loop back to first level
+      setCurrentLevel(0);
     }
-    restartLevel();
-  };
+    setPatty(null);
+    pattyRef.current = null;
+    setGameState('waiting');
+    winTimerRef.current = null;
+  }, [currentLevel]);
 
-  // Track current path in a ref for immediate access
-  const currentPathRef = useRef<Point[]>([]);
-  const isDrawingRef = useRef(false);
+  // Pan control handlers
+  const handlePanStart = useCallback((x: number) => {
+    isDraggingRef.current = true;
+    lastTouchXRef.current = x;
+  }, []);
 
-  // Touch/Mouse handlers for drawing
-  const handleDrawStart = useCallback((x: number, y: number) => {
-    if (gameState === 'win' || gameState === 'fail') return;
-    console.log('Draw started:', x, y);
-    isDrawingRef.current = true;
-    setIsDrawing(true);
-    currentPathRef.current = [{ x, y }];
-    setCurrentPath([{ x, y }]);
-  }, [gameState]);
-
-  const handleDrawMove = useCallback((x: number, y: number) => {
-    if (!isDrawingRef.current || gameState === 'win' || gameState === 'fail') return;
+  const handlePanMove = useCallback((x: number) => {
+    if (!isDraggingRef.current) return;
     
-    const newPoint = { x, y };
-    const newPath = [...currentPathRef.current, newPoint];
-    const totalLength = calculatePathLength(newPath);
+    const deltaX = x - lastTouchXRef.current;
+    lastTouchXRef.current = x;
     
-    // Calculate total drawn length including previous shapes
-    const previousLength = drawnShapes.reduce(
-      (sum, shape) => sum + calculatePathLength(shape.points),
-      0
-    );
+    const newPan = { ...panRef.current };
+    newPan.vx = deltaX * 0.8;
+    newPan.x = Math.max(newPan.width / 2, Math.min(GAME_WIDTH - newPan.width / 2, newPan.x + deltaX));
+    newPan.tilt = Math.max(-1, Math.min(1, deltaX / 20));
     
-    if (previousLength + totalLength <= MAX_DRAW_LENGTH) {
-      currentPathRef.current = newPath;
-      setCurrentPath(newPath);
-      setCurrentDrawLength(previousLength + totalLength);
-    }
-  }, [gameState, drawnShapes]);
+    panRef.current = newPan;
+    setPan(newPan);
+  }, [GAME_WIDTH]);
 
-  const handleDrawEnd = useCallback(() => {
-    console.log('Draw ended, path length:', currentPathRef.current.length, 'isDrawing:', isDrawingRef.current);
-    
-    // Check if we have a valid path
-    if (currentPathRef.current.length < 2) {
-      console.log('Path too short, clearing');
-      isDrawingRef.current = false;
-      setIsDrawing(false);
-      currentPathRef.current = [];
-      setCurrentPath([]);
-      return;
-    }
-
-    // Calculate bounds
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity;
-    currentPathRef.current.forEach((p) => {
-      minX = Math.min(minX, p.x);
-      maxX = Math.max(maxX, p.x);
-      minY = Math.min(minY, p.y);
-      maxY = Math.max(maxY, p.y);
-    });
-
-    const newShape: DrawnShape = {
-      id: Date.now().toString(),
-      points: [...currentPathRef.current],
-      bounds: { minX, maxX, minY, maxY },
-    };
-
-    console.log('Adding new shape with', newShape.points.length, 'points');
-    setDrawnShapes((prev) => {
-      const updated = [...prev, newShape];
-      console.log('DrawnShapes updated, now has', updated.length, 'shapes');
-      return updated;
-    });
-    
-    isDrawingRef.current = false;
-    setIsDrawing(false);
-    currentPathRef.current = [];
-    setCurrentPath([]);
-
-    // Auto-start game after first draw if ready
-    if (gameState === 'ready') {
-      console.log('Starting game!');
-      startGame();
-    }
-  }, [gameState, startGame]);
+  const handlePanEnd = useCallback(() => {
+    isDraggingRef.current = false;
+    const newPan = { ...panRef.current, tilt: 0, vx: 0 };
+    panRef.current = newPan;
+    setPan(newPan);
+  }, []);
 
   // Touch event handlers
   const onTouchStart = useCallback((e: any) => {
     const touch = e.nativeEvent.touches?.[0] || e.nativeEvent;
-    const x = touch.locationX ?? touch.pageX;
-    const y = touch.locationY ?? touch.pageY;
-    handleDrawStart(x, y);
-  }, [handleDrawStart]);
+    const x = touch.locationX ?? touch.pageX ?? touch.clientX;
+    handlePanStart(x);
+    
+    // Start game on first touch if waiting
+    if (gameState === 'waiting') {
+      startGame();
+    }
+  }, [handlePanStart, gameState, startGame]);
 
   const onTouchMove = useCallback((e: any) => {
     const touch = e.nativeEvent.touches?.[0] || e.nativeEvent;
-    const x = touch.locationX ?? touch.pageX;
-    const y = touch.locationY ?? touch.pageY;
-    handleDrawMove(x, y);
-  }, [handleDrawMove]);
+    const x = touch.locationX ?? touch.pageX ?? touch.clientX;
+    handlePanMove(x);
+  }, [handlePanMove]);
 
   const onTouchEnd = useCallback(() => {
-    handleDrawEnd();
-  }, [handleDrawEnd]);
+    handlePanEnd();
+  }, [handlePanEnd]);
 
-  // Pick background image
+  // Background picker
   const pickBackgroundImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
@@ -574,50 +510,97 @@ export default function BurgerDropGame() {
     if (!result.canceled && result.assets[0].base64) {
       setBackgroundImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
     }
-    setShowMenu(false);
   };
 
   // Render patty
   const renderPatty = () => {
     if (!patty) return null;
     
-    const baseColor = `rgb(${139 + patty.brownLevel * 50}, ${90 - patty.brownLevel * 40}, ${43 - patty.brownLevel * 20})`;
+    const baseColor = `rgb(${139 + patty.brownLevel * 60}, ${90 - patty.brownLevel * 50}, ${43 - patty.brownLevel * 30})`;
     
     return (
-      <G>
+      <G transform={`translate(${patty.x}, ${patty.y}) rotate(${patty.rotation * 180 / Math.PI})`}>
         {/* Shadow */}
         <Ellipse
-          cx={patty.x}
-          cy={patty.y + patty.radius + 5}
-          rx={patty.radius * 0.8}
+          cx={0}
+          cy={patty.radius + 8}
+          rx={patty.radius * 0.9}
           ry={patty.radius * 0.3}
-          fill="rgba(0,0,0,0.2)"
+          fill="rgba(0,0,0,0.25)"
         />
         {/* Patty body */}
         <Circle
-          cx={patty.x}
-          cy={patty.y}
+          cx={0}
+          cy={0}
           r={patty.radius}
           fill={baseColor}
         />
-        {/* Patty texture */}
-        <Circle
-          cx={patty.x - 8}
-          cy={patty.y - 5}
-          r={4}
-          fill={`rgba(100, 60, 30, ${0.3 + patty.brownLevel * 0.2})`}
+        {/* Patty texture/highlights */}
+        <Circle cx={-12} cy={-8} r={6} fill={`rgba(80, 50, 25, ${0.4 + patty.brownLevel * 0.2})`} />
+        <Circle cx={10} cy={-5} r={5} fill={`rgba(80, 50, 25, ${0.4 + patty.brownLevel * 0.2})`} />
+        <Circle cx={0} cy={10} r={7} fill={`rgba(80, 50, 25, ${0.4 + patty.brownLevel * 0.2})`} />
+        <Circle cx={15} cy={8} r={4} fill={`rgba(80, 50, 25, ${0.3 + patty.brownLevel * 0.2})`} />
+        <Circle cx={-8} cy={12} r={5} fill={`rgba(80, 50, 25, ${0.3 + patty.brownLevel * 0.2})`} />
+        {/* Shine highlight */}
+        <Ellipse cx={-8} cy={-12} rx={8} ry={5} fill="rgba(255,255,255,0.15)" />
+      </G>
+    );
+  };
+
+  // Render pan
+  const renderPan = () => {
+    const tiltAngle = pan.tilt * 15;
+    
+    return (
+      <G transform={`translate(${pan.x}, ${pan.y}) rotate(${tiltAngle})`}>
+        {/* Pan shadow */}
+        <Ellipse
+          cx={0}
+          cy={pan.height + 5}
+          rx={pan.width / 2 + 5}
+          ry={8}
+          fill="rgba(0,0,0,0.3)"
         />
-        <Circle
-          cx={patty.x + 6}
-          cy={patty.y + 3}
-          r={3}
-          fill={`rgba(100, 60, 30, ${0.3 + patty.brownLevel * 0.2})`}
+        {/* Pan body */}
+        <Ellipse
+          cx={0}
+          cy={0}
+          rx={pan.width / 2}
+          ry={pan.height}
+          fill="#3A3A3A"
         />
-        <Circle
-          cx={patty.x - 3}
-          cy={patty.y + 8}
-          r={3.5}
-          fill={`rgba(100, 60, 30, ${0.3 + patty.brownLevel * 0.2})`}
+        {/* Pan inner surface */}
+        <Ellipse
+          cx={0}
+          cy={2}
+          rx={pan.width / 2 - 8}
+          ry={pan.height - 5}
+          fill="#2A2A2A"
+        />
+        {/* Pan highlight */}
+        <Ellipse
+          cx={-15}
+          cy={-5}
+          rx={25}
+          ry={8}
+          fill="rgba(255,255,255,0.1)"
+        />
+        {/* Handle */}
+        <Rect
+          x={pan.width / 2 - 5}
+          y={-8}
+          width={50}
+          height={16}
+          rx={8}
+          fill="#5D4037"
+        />
+        <Rect
+          x={pan.width / 2}
+          y={-5}
+          width={45}
+          height={10}
+          rx={5}
+          fill="#6D4C41"
         />
       </G>
     );
@@ -629,93 +612,98 @@ export default function BurgerDropGame() {
       <G>
         {/* Machine body */}
         <Rect
-          x={level.dispenserX - 45}
-          y={level.dispenserY - 40}
-          width={90}
-          height={80}
-          rx={10}
-          fill="#E8E8E8"
-          stroke="#CCCCCC"
-          strokeWidth={2}
+          x={level.dispenserX - 50}
+          y={level.dispenserY - 45}
+          width={100}
+          height={90}
+          rx={12}
+          fill="#E0E0E0"
+          stroke="#BDBDBD"
+          strokeWidth={3}
         />
         {/* Dispenser opening */}
         <Rect
-          x={level.dispenserX - 20}
-          y={level.dispenserY + 30}
-          width={40}
-          height={15}
-          fill="#333333"
+          x={level.dispenserX - 25}
+          y={level.dispenserY + 35}
+          width={50}
+          height={18}
+          fill="#1A1A1A"
         />
-        {/* Machine details */}
+        {/* Machine face details */}
         <Rect
-          x={level.dispenserX - 30}
-          y={level.dispenserY - 25}
-          width={15}
-          height={15}
-          rx={3}
-          fill="#FF6B6B"
+          x={level.dispenserX - 35}
+          y={level.dispenserY - 30}
+          width={20}
+          height={20}
+          rx={4}
+          fill="#FF5252"
         />
         <Rect
           x={level.dispenserX - 10}
-          y={level.dispenserY - 25}
-          width={15}
-          height={15}
-          rx={3}
-          fill="#4ECDC4"
+          y={level.dispenserY - 30}
+          width={20}
+          height={20}
+          rx={4}
+          fill="#4CAF50"
         />
         <Rect
-          x={level.dispenserX + 10}
-          y={level.dispenserY - 25}
-          width={15}
-          height={15}
-          rx={3}
-          fill="#FFE66D"
+          x={level.dispenserX + 15}
+          y={level.dispenserY - 30}
+          width={20}
+          height={20}
+          rx={4}
+          fill="#FFC107"
         />
-        {/* Chicken head decoration */}
-        <G transform={`translate(${level.dispenserX + 35}, ${level.dispenserY - 20})`}>
-          <Ellipse cx={0} cy={0} rx={20} ry={18} fill="white" />
-          {/* Comb */}
-          <Path
-            d="M -5 -18 L -3 -25 L 0 -18 L 3 -28 L 6 -18"
-            fill="#FF4444"
-          />
-          {/* Beak */}
-          <Polygon points="15,0 25,-3 25,5" fill="#FFB347" />
-          {/* Eye */}
-          <Circle cx={5} cy={-3} r={4} fill="#333" />
-          <Circle cx={6} cy={-4} r={1.5} fill="white" />
-          {/* Wattle */}
-          <Ellipse cx={10} cy={8} rx={5} ry={8} fill="#FF4444" />
-        </G>
+        {/* Display */}
+        <Rect
+          x={level.dispenserX - 35}
+          y={level.dispenserY + 5}
+          width={70}
+          height={25}
+          rx={3}
+          fill="#1A237E"
+        />
       </G>
     );
   };
 
-  // Render target
+  // Render target (bun/plate)
   const renderTarget = () => {
     const target = level.target;
     return (
       <G>
-        {/* Hand */}
-        <G transform={`translate(${target.x + target.width + 10}, ${target.y + 20})`}>
-          <Rect x={0} y={0} width={25} height={50} rx={5} fill="#F4C2A1" />
-          <Rect x={-8} y={10} width={12} height={30} rx={4} fill="#F4C2A1" />
-        </G>
-        {/* Plate/Bun bottom */}
+        {/* Plate */}
+        <Ellipse
+          cx={target.x + target.width / 2}
+          cy={target.y + target.height - 5}
+          rx={target.width / 2 + 10}
+          ry={15}
+          fill="#ECEFF1"
+          stroke="#B0BEC5"
+          strokeWidth={2}
+        />
+        {/* Bun bottom */}
         <Rect
           x={target.x}
           y={target.y}
           width={target.width}
           height={target.height}
-          rx={8}
+          rx={10}
           fill="#D4A574"
         />
-        {/* Bun sesame seeds */}
-        <Ellipse cx={target.x + 20} cy={target.y + 10} rx={4} ry={2} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 50} cy={target.y + 15} rx={4} ry={2} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 80} cy={target.y + 8} rx={4} ry={2} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 35} cy={target.y + 25} rx={4} ry={2} fill="#F5F5DC" />
-        <Ellipse cx={target.x + 65} cy={target.y + 28} rx={4} ry={2} fill="#F5F5DC" />
+        {/* Bun details */}
+        <Ellipse cx={target.x + 25} cy={target.y + 12} rx={5} ry={3} fill="#F5F5DC" />
+        <Ellipse cx={target.x + 55} cy={target.y + 18} rx={5} ry={3} fill="#F5F5DC" />
+        <Ellipse cx={target.x + 78} cy={target.y + 10} rx={5} ry={3} fill="#F5F5DC" />
+        <Ellipse cx={target.x + 40} cy={target.y + 30} rx={5} ry={3} fill="#F5F5DC" />
+        <Ellipse cx={target.x + 70} cy={target.y + 35} rx={5} ry={3} fill="#F5F5DC" />
+        {/* Lettuce hint */}
+        <Path
+          d={`M ${target.x + 5} ${target.y + 5} Q ${target.x + 25} ${target.y - 5} ${target.x + 50} ${target.y + 5} Q ${target.x + 75} ${target.y - 5} ${target.x + 95} ${target.y + 5}`}
+          fill="none"
+          stroke="#66BB6A"
+          strokeWidth={4}
+        />
       </G>
     );
   };
@@ -723,53 +711,37 @@ export default function BurgerDropGame() {
   // Render hazards
   const renderHazards = () => {
     return level.hazards.map((hazard, index) => {
-      if (hazard.type === 'knife') {
-        return (
-          <G
-            key={`hazard-${index}`}
-            transform={`translate(${hazard.x}, ${hazard.y}) rotate(${hazard.rotation || 0})`}
-          >
-            {/* Blade */}
-            <Polygon
-              points={`${-hazard.width / 2},0 ${hazard.width / 3},${-hazard.height / 2} ${hazard.width / 3},${hazard.height / 2}`}
-              fill="#4A4A4A"
-            />
-            {/* Handle */}
-            <Rect
-              x={hazard.width / 3}
-              y={-hazard.height / 3}
-              width={hazard.width / 3}
-              height={hazard.height * 0.66}
-              rx={3}
-              fill="#8B4513"
-            />
-          </G>
-        );
-      } else if (hazard.type === 'fire') {
+      if (hazard.type === 'grill') {
         return (
           <G key={`hazard-${index}`}>
-            {/* Fire base */}
-            <Ellipse
-              cx={hazard.x}
-              cy={hazard.y + hazard.height / 3}
-              rx={hazard.width / 2}
-              ry={hazard.height / 4}
-              fill="#FF6600"
+            {/* Grill base */}
+            <Rect
+              x={hazard.x - hazard.width / 2}
+              y={hazard.y - hazard.height / 2}
+              width={hazard.width}
+              height={hazard.height}
+              rx={3}
+              fill="#424242"
             />
-            {/* Flames */}
-            <Path
-              d={`M ${hazard.x - hazard.width / 3} ${hazard.y + hazard.height / 3}
-                  Q ${hazard.x - hazard.width / 4} ${hazard.y - hazard.height / 2}
-                  ${hazard.x} ${hazard.y - hazard.height / 3}
-                  Q ${hazard.x + hazard.width / 4} ${hazard.y - hazard.height / 2}
-                  ${hazard.x + hazard.width / 3} ${hazard.y + hazard.height / 3}`}
-              fill="#FF4400"
-            />
-            <Path
-              d={`M ${hazard.x - hazard.width / 5} ${hazard.y + hazard.height / 4}
-                  Q ${hazard.x} ${hazard.y - hazard.height / 3}
-                  ${hazard.x + hazard.width / 5} ${hazard.y + hazard.height / 4}`}
-              fill="#FFCC00"
+            {/* Grill lines */}
+            {[...Array(5)].map((_, i) => (
+              <Line
+                key={`grill-line-${i}`}
+                x1={hazard.x - hazard.width / 2 + 10 + i * ((hazard.width - 20) / 4)}
+                y1={hazard.y - hazard.height / 2 + 3}
+                x2={hazard.x - hazard.width / 2 + 10 + i * ((hazard.width - 20) / 4)}
+                y2={hazard.y + hazard.height / 2 - 3}
+                stroke="#FF5722"
+                strokeWidth={3}
+              />
+            ))}
+            {/* Heat glow */}
+            <Rect
+              x={hazard.x - hazard.width / 2}
+              y={hazard.y - hazard.height / 2 - 5}
+              width={hazard.width}
+              height={5}
+              fill="rgba(255, 87, 34, 0.4)"
             />
           </G>
         );
@@ -778,52 +750,142 @@ export default function BurgerDropGame() {
     });
   };
 
-  // Render obstacles
-  const renderObstacles = () => {
-    return level.obstacles.map((obs, index) => (
-      <Rect
-        key={`obs-${index}`}
-        x={obs.x}
-        y={obs.y}
-        width={obs.width}
-        height={obs.height}
-        rx={3}
-        fill="#666666"
-      />
-    ));
-  };
-
-  // Render drawn shapes
-  const renderDrawnShapes = () => {
-    const allShapes = [...drawnShapes];
-    if (currentPath.length > 1) {
-      allShapes.push({
-        id: 'current',
-        points: currentPath,
-        bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
-      });
-    }
-
-    return allShapes.map((shape) => {
-      const pathData = shape.points
-        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
-        .join(' ');
-      return (
-        <Path
-          key={shape.id}
-          d={pathData}
-          stroke="white"
-          strokeWidth={12}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-      );
-    });
-  };
-
-  // Draw limit indicator
-  const drawLimitPercentage = (currentDrawLength / MAX_DRAW_LENGTH) * 100;
+  // Settings Modal
+  const renderSettingsModal = () => (
+    <Modal
+      visible={showSettings}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowSettings(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Settings</Text>
+            <TouchableOpacity onPress={() => setShowSettings(false)}>
+              <Ionicons name="close" size={28} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.settingsScroll}>
+            {/* Background Section */}
+            <Text style={styles.sectionTitle}>Background</Text>
+            
+            {/* Built-in backgrounds */}
+            <View style={styles.backgroundGrid}>
+              {BUILT_IN_BACKGROUNDS.map((bg) => (
+                <TouchableOpacity
+                  key={bg.id}
+                  style={[
+                    styles.backgroundOption,
+                    { backgroundColor: bg.color },
+                    backgroundColor === bg.color && !backgroundImage && styles.backgroundSelected,
+                  ]}
+                  onPress={() => {
+                    setBackgroundImage(null);
+                    setBackgroundColor(bg.color);
+                  }}
+                >
+                  <Text style={styles.backgroundOptionText}>{bg.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Upload custom background */}
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={pickBackgroundImage}
+            >
+              <Ionicons name="image-outline" size={24} color="white" />
+              <Text style={styles.uploadButtonText}>Upload Custom Background</Text>
+            </TouchableOpacity>
+            
+            {backgroundImage && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => setBackgroundImage(null)}
+              >
+                <Ionicons name="trash-outline" size={20} color="#FF5252" />
+                <Text style={styles.clearButtonText}>Remove Custom Background</Text>
+              </TouchableOpacity>
+            )}
+            
+            {/* Background mode */}
+            <Text style={styles.subsectionTitle}>Fit Mode</Text>
+            <View style={styles.fitModeRow}>
+              <TouchableOpacity
+                style={[styles.fitModeButton, backgroundMode === 'fill' && styles.fitModeActive]}
+                onPress={() => setBackgroundMode('fill')}
+              >
+                <Text style={[styles.fitModeText, backgroundMode === 'fill' && styles.fitModeTextActive]}>Fill</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.fitModeButton, backgroundMode === 'fit' && styles.fitModeActive]}
+                onPress={() => setBackgroundMode('fit')}
+              >
+                <Text style={[styles.fitModeText, backgroundMode === 'fit' && styles.fitModeTextActive]}>Fit</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Brightness slider */}
+            <Text style={styles.subsectionTitle}>Background Brightness</Text>
+            <View style={styles.sliderRow}>
+              <Ionicons name="sunny-outline" size={20} color="#666" />
+              <View style={styles.sliderContainer}>
+                {Platform.OS === 'web' ? (
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="1"
+                    step="0.1"
+                    value={backgroundBrightness}
+                    onChange={(e) => setBackgroundBrightness(parseFloat(e.target.value))}
+                    style={{ width: '100%', height: 40 }}
+                  />
+                ) : (
+                  <Slider
+                    style={{ flex: 1, height: 40 }}
+                    minimumValue={0.2}
+                    maximumValue={1}
+                    value={backgroundBrightness}
+                    onValueChange={setBackgroundBrightness}
+                    minimumTrackTintColor="#4CAF50"
+                    maximumTrackTintColor="#E0E0E0"
+                  />
+                )}
+              </View>
+              <Ionicons name="sunny" size={24} color="#FFC107" />
+            </View>
+            
+            {/* Game controls */}
+            <Text style={styles.sectionTitle}>Game</Text>
+            <TouchableOpacity
+              style={styles.gameButton}
+              onPress={() => {
+                restartLevel();
+                setShowSettings(false);
+              }}
+            >
+              <Ionicons name="reload" size={22} color="white" />
+              <Text style={styles.gameButtonText}>Restart Level</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.gameButton, { backgroundColor: '#FF9800' }]}
+              onPress={() => {
+                setCurrentLevel(0);
+                restartLevel();
+                setShowSettings(false);
+              }}
+            >
+              <Ionicons name="home" size={22} color="white" />
+              <Text style={styles.gameButtonText}>Back to Level 1</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -831,13 +893,20 @@ export default function BurgerDropGame() {
       
       {/* Background */}
       {backgroundImage ? (
-        <Image
-          source={{ uri: backgroundImage }}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        />
+        <View style={styles.backgroundContainer}>
+          <Image
+            source={{ uri: backgroundImage }}
+            style={[
+              styles.backgroundImage,
+              { resizeMode: backgroundMode === 'fill' ? 'cover' : 'contain' }
+            ]}
+          />
+          <View style={[styles.backgroundDim, { opacity: 1 - backgroundBrightness }]} />
+        </View>
       ) : (
-        <View style={styles.defaultBackground} />
+        <View style={[styles.defaultBackground, { backgroundColor }]}>
+          <View style={[styles.backgroundDim, { opacity: 1 - backgroundBrightness }]} />
+        </View>
       )}
 
       {/* Game Canvas */}
@@ -851,141 +920,68 @@ export default function BurgerDropGame() {
         onResponderTerminate={onTouchEnd}
       >
         <Svg 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-          }}
+          style={StyleSheet.absoluteFill}
           width={GAME_WIDTH} 
           height={GAME_HEIGHT} 
           viewBox={`0 0 ${GAME_WIDTH} ${GAME_HEIGHT}`}
         >
-          {/* Drawn shapes */}
-          {renderDrawnShapes()}
-          
           {/* Game objects */}
           {renderDispenser()}
           {renderTarget()}
           {renderHazards()}
-          {renderObstacles()}
+          {renderPan()}
           {renderPatty()}
         </Svg>
       </View>
 
       {/* UI Overlay */}
       <View style={styles.uiOverlay}>
-        {/* Level indicator */}
         <View style={styles.levelContainer}>
           <Text style={styles.levelText}>Level {currentLevel + 1}</Text>
         </View>
-
-        {/* Draw limit bar */}
-        <View style={styles.drawLimitContainer}>
-          <View style={styles.drawLimitBar}>
-            <View
-              style={[
-                styles.drawLimitFill,
-                {
-                  width: `${drawLimitPercentage}%`,
-                  backgroundColor:
-                    drawLimitPercentage > 80
-                      ? '#FF6B6B'
-                      : drawLimitPercentage > 50
-                      ? '#FFE66D'
-                      : '#4ECDC4',
-                },
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Menu button */}
+        
         <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => setShowMenu(!showMenu)}
+          style={styles.resetButton}
+          onPress={restartLevel}
+        >
+          <Ionicons name="reload" size={22} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => setShowSettings(true)}
         >
           <Ionicons name="settings-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       {/* Instructions overlay */}
-      {gameState === 'ready' && drawnShapes.length === 0 && (
-        <View style={styles.instructionsOverlay}>
-          <Text style={styles.instructionsText}>Draw to guide the patty!</Text>
-          <Text style={styles.instructionsSubtext}>Draw a path, then release</Text>
+      {gameState === 'waiting' && (
+        <View style={styles.instructionsOverlay} pointerEvents="none">
+          <MaterialCommunityIcons name="pan" size={48} color="white" />
+          <Text style={styles.instructionsText}>Drag to move the pan!</Text>
+          <Text style={styles.instructionsSubtext}>Catch & flip the patty onto the bun</Text>
         </View>
       )}
 
-      {/* Win/Fail overlay */}
+      {/* Win overlay */}
       {gameState === 'win' && (
         <View style={styles.resultOverlay}>
-          <Text style={styles.winText}>Nice!</Text>
+          <Text style={styles.winText}>Perfect!</Text>
+          <Text style={styles.resultSubtext}>Next level...</Text>
         </View>
       )}
+      
+      {/* Fail overlay */}
       {gameState === 'fail' && (
         <View style={styles.resultOverlay}>
           <Text style={styles.failText}>Oops!</Text>
+          <Text style={styles.resultSubtext}>Try again...</Text>
         </View>
       )}
 
-      {/* Menu overlay */}
-      {showMenu && (
-        <View style={styles.menuOverlay}>
-          <View style={styles.menuContent}>
-            <Text style={styles.menuTitle}>Menu</Text>
-            
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={pickBackgroundImage}
-            >
-              <Ionicons name="image-outline" size={24} color="#333" />
-              <Text style={styles.menuItemText}>Change Background</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setBackgroundImage(null);
-                setShowMenu(false);
-              }}
-            >
-              <Ionicons name="refresh-outline" size={24} color="#333" />
-              <Text style={styles.menuItemText}>Reset Background</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                restartLevel();
-                setShowMenu(false);
-              }}
-            >
-              <Ionicons name="reload-outline" size={24} color="#333" />
-              <Text style={styles.menuItemText}>Restart Level</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setCurrentLevel(0);
-                restartLevel();
-                setShowMenu(false);
-              }}
-            >
-              <Ionicons name="home-outline" size={24} color="#333" />
-              <Text style={styles.menuItemText}>Back to Level 1</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.menuItem, styles.closeButton]}
-              onPress={() => setShowMenu(false)}
-            >
-              <Ionicons name="close-outline" size={24} color="white" />
-              <Text style={[styles.menuItemText, { color: 'white' }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {/* Settings Modal */}
+      {renderSettingsModal()}
     </GestureHandlerRootView>
   );
 }
@@ -994,24 +990,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  backgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
   defaultBackground: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#8B5A2B',
   },
   backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+  },
+  backgroundDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
   },
   gameContainer: {
     ...StyleSheet.absoluteFillObject,
-  },
-  svg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
   },
   uiOverlay: {
     position: 'absolute',
@@ -1019,61 +1013,55 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingTop: 50,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   levelContainer: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 25,
   },
   levelText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  drawLimitContainer: {
-    flex: 1,
-    marginHorizontal: 15,
+  resetButton: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 25,
+    marginLeft: 'auto',
+    marginRight: 10,
   },
-  drawLimitBar: {
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  drawLimitFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  menuButton: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 10,
-    borderRadius: 20,
+  settingsButton: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 25,
   },
   instructionsOverlay: {
     position: 'absolute',
-    top: '40%',
+    top: '35%',
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   instructionsText: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    marginTop: 12,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
   instructionsSubtext: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 16,
     marginTop: 8,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
@@ -1085,63 +1073,169 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   winText: {
-    color: '#4ECDC4',
-    fontSize: 64,
+    color: '#4CAF50',
+    fontSize: 56,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 6,
   },
   failText: {
-    color: '#FF6B6B',
-    fontSize: 64,
+    color: '#FF5252',
+    fontSize: 56,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 6,
   },
-  menuOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  resultSubtext: {
+    color: 'white',
+    fontSize: 20,
+    marginTop: 10,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  menuContent: {
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
     backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 24,
-    width: '80%',
-    maxWidth: 300,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    paddingBottom: 30,
   },
-  menuTitle: {
-    fontSize: 24,
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
   },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#F5F5F5',
+  settingsScroll: {
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
     marginBottom: 12,
   },
-  menuItemText: {
-    fontSize: 16,
-    marginLeft: 12,
-    color: '#333',
+  subsectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
   },
-  closeButton: {
-    backgroundColor: '#FF6B6B',
+  backgroundGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  backgroundOption: {
+    width: '47%',
+    height: 70,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  backgroundSelected: {
+    borderColor: '#4CAF50',
+  },
+  backgroundOptionText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2196F3',
+    padding: 14,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 10,
+  },
+  uploadButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  clearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
     marginTop: 8,
+    gap: 8,
+  },
+  clearButtonText: {
+    color: '#FF5252',
+    fontSize: 14,
+  },
+  fitModeRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  fitModeButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+  },
+  fitModeActive: {
+    backgroundColor: '#4CAF50',
+  },
+  fitModeText: {
+    fontWeight: '600',
+    color: '#666',
+  },
+  fitModeTextActive: {
+    color: 'white',
+  },
+  sliderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sliderContainer: {
+    flex: 1,
+  },
+  gameButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    padding: 14,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 10,
+  },
+  gameButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
