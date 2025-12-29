@@ -1404,6 +1404,7 @@ export default function PattyDisposalGame() {
       )}
 
       {renderSettingsModal()}
+      {renderModsModal()}
     </GestureHandlerRootView>
   );
 }
