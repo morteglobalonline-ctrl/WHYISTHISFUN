@@ -115,13 +115,39 @@ export default function MainMenu() {
             </View>
             <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
           </TouchableOpacity>
+
+          {/* Toilet Chaos Game Card */}
+          <TouchableOpacity
+            style={styles.gameCard}
+            onPress={() => setCurrentScreen('toiletchaos')}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.gameCardIcon, { backgroundColor: '#5D4037' }]}>
+              <MaterialCommunityIcons name="toilet" size={48} color="white" />
+            </View>
+            <View style={styles.gameCardContent}>
+              <Text style={styles.gameCardTitle}>Toilet Chaos</Text>
+              <Text style={styles.gameCardDescription}>
+                Flappy fun through poop streams - stress-free chaos!
+              </Text>
+              <View style={styles.gameCardTags}>
+                <View style={[styles.tag, { backgroundColor: 'rgba(93, 64, 55, 0.3)' }]}>
+                  <Text style={[styles.tagText, { color: '#8D6E63' }]}>Flappy</Text>
+                </View>
+                <View style={[styles.tag, { backgroundColor: 'rgba(33, 150, 243, 0.2)' }]}>
+                  <Text style={[styles.tagText, { color: '#2196F3' }]}>Zen</Text>
+                </View>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>More games coming soon!</Text>
         </View>
-      </View>
+      </ScrollView>
     </GestureHandlerRootView>
   );
 }
