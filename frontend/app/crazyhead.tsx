@@ -926,15 +926,31 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
 
   // Render launcher
   const renderLauncher = () => {
+    const scale = isDraggingLauncher ? 1.1 : 1;
+    const glowOpacity = isDraggingLauncher ? 0.4 : 0;
+    
     return (
-      <G>
-        {/* Base */}
-        <Rect x={LAUNCHER_X - 35} y={LAUNCHER_Y - 20} width={70} height={50} rx={8} fill="#455A64" />
-        <Rect x={LAUNCHER_X - 25} y={LAUNCHER_Y - 30} width={50} height={20} rx={5} fill="#607D8B" />
+      <G transform={`translate(${launcherX}, ${LAUNCHER_Y}) scale(${scale})`}>
+        {/* Glow effect when dragging */}
+        {isDraggingLauncher && (
+          <Circle cx={0} cy={-10} r={55} fill="#2196F3" opacity={glowOpacity} />
+        )}
+        
+        {/* Base platform */}
+        <Rect x={-35} y={-20} width={70} height={50} rx={8} fill={isDraggingLauncher ? '#1976D2' : '#455A64'} />
+        <Rect x={-25} y={-30} width={50} height={20} rx={5} fill={isDraggingLauncher ? '#42A5F5' : '#607D8B'} />
+        
+        {/* Drag handle indicator */}
+        <Line x1={-15} y1={15} x2={15} y2={15} stroke="rgba(255,255,255,0.4)" strokeWidth={3} strokeLinecap="round" />
+        <Line x1={-10} y1={22} x2={10} y2={22} stroke="rgba(255,255,255,0.3)" strokeWidth={2} strokeLinecap="round" />
+        
+        {/* Left/Right arrows to indicate draggable */}
+        <Polygon points="-30,5 -38,0 -30,-5" fill="rgba(255,255,255,0.3)" />
+        <Polygon points="30,5 38,0 30,-5" fill="rgba(255,255,255,0.3)" />
         
         {/* Item preview */}
         {gameState === 'ready' && (
-          <Circle cx={LAUNCHER_X} cy={LAUNCHER_Y - 40} r={20} fill={currentItem.colors.primary} stroke="#333" strokeWidth={2} />
+          <Circle cx={0} cy={-40} r={20} fill={currentItem.colors.primary} stroke="#333" strokeWidth={2} />
         )}
       </G>
     );
