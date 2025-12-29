@@ -946,10 +946,14 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   gameContainer: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   svg: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   uiOverlay: {
     position: 'absolute',
