@@ -1445,6 +1445,13 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
 
       {/* UI Overlay */}
       <View style={styles.uiOverlay}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={onBack}
+        >
+          <Ionicons name="arrow-back" size={22} color="white" />
+        </TouchableOpacity>
+        
         <View style={styles.levelContainer}>
           <Text style={styles.levelText}>Level {currentLevel + 1}</Text>
           <View style={styles.progressContainer}>
