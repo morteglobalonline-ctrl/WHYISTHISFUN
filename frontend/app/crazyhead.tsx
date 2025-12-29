@@ -1041,9 +1041,9 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       {/* Setup overlay (before head image is selected) */}
       {gameState === 'setup' && (
         <View style={styles.setupOverlay}>
-          <MaterialCommunityIcons name="emoticon-cool" size={80} color="white" />
-          <Text style={styles.setupTitle}>Crazy Head</Text>
-          <Text style={styles.setupSubtitle}>Upload a face to begin!</Text>
+          <MaterialCommunityIcons name="emoticon-devil" size={80} color="white" />
+          <Text style={styles.setupTitle}>Pick a face you can't stand 😈</Text>
+          <Text style={styles.setupSubtitle}>Upload a head image to begin.</Text>
           <TouchableOpacity style={styles.uploadButton} onPress={pickHeadImage}>
             <Ionicons name="camera-outline" size={28} color="white" />
             <Text style={styles.uploadButtonText}>Choose Head Image</Text>
