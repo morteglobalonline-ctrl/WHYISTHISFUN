@@ -168,8 +168,8 @@ export default function MainMenu() {
             onPress={() => setCurrentScreen('flushit')}
             activeOpacity={0.85}
           >
-            <View style={[styles.gameCardIcon, { backgroundColor: '#2196F3' }]}>
-              <MaterialCommunityIcons name="water" size={48} color="white" />
+            <View style={styles.gameCardIconContainer}>
+              <Image source={GameIcons.flushit} style={styles.gameCardIcon} />
             </View>
             <View style={styles.gameCardContent}>
               <Text style={styles.gameCardTitle}>Flush It</Text>
