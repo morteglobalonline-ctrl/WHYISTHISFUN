@@ -194,8 +194,8 @@ export default function MainMenu() {
             onPress={() => setCurrentScreen('deadeye')}
             activeOpacity={0.85}
           >
-            <View style={[styles.gameCardIcon, { backgroundColor: '#E53935' }]}>
-              <MaterialCommunityIcons name="crosshairs-gps" size={48} color="white" />
+            <View style={styles.gameCardIconContainer}>
+              <Image source={GameIcons.deadeye} style={styles.gameCardIcon} />
             </View>
             <View style={styles.gameCardContent}>
               <Text style={styles.gameCardTitle}>Deadeye Fun</Text>
