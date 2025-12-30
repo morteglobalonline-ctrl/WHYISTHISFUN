@@ -937,16 +937,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  goalContainer: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  endlessTag: {
+    backgroundColor: 'rgba(76, 175, 80, 0.8)',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 6,
+    borderRadius: 12,
     marginLeft: 10,
   },
-  goalLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
+  endlessText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   bestContainer: {
     backgroundColor: 'rgba(0,0,0,0.5)',
