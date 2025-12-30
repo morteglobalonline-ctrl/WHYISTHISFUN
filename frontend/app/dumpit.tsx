@@ -248,7 +248,7 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
   const GAME_HEIGHT = windowHeight;
 
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [gameState, setGameState] = useState<'waiting' | 'playing' | 'aiming' | 'win' | 'fail'>('waiting');
+  const [gameState, setGameState] = useState<'waiting' | 'playing' | 'aiming' | 'win' | 'fail' | 'comingSoon'>('waiting');
   const [activePatty, setActivePatty] = useState<Patty | null>(null);
   const [disposedCount, setDisposedCount] = useState(0);
   const [pan, setPan] = useState<Pan>({
