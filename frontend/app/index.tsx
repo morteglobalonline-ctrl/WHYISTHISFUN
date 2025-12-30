@@ -252,45 +252,11 @@ export default function MainMenu() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  backgroundGradient: {
+  background: {
     ...StyleSheet.absoluteFillObject,
-  },
-  gradientLayer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  decorContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  decorCircle: {
-    position: 'absolute',
-    borderRadius: 999,
-    opacity: 0.1,
-  },
-  decorCircle1: {
-    width: 300,
-    height: 300,
-    backgroundColor: '#4CAF50',
-    top: -100,
-    right: -100,
-  },
-  decorCircle2: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#FF5722',
-    bottom: 100,
-    left: -80,
-  },
-  decorCircle3: {
-    width: 150,
-    height: 150,
-    backgroundColor: '#2196F3',
-    top: '40%',
-    right: -50,
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flex: 1,
@@ -310,16 +276,23 @@ const styles = StyleSheet.create({
   },
   gamesContainer: {
     flex: 1,
-    gap: 20,
+    gap: 16,
   },
   gameCard: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#F6F7F9',
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    // Subtle iOS-style shadow
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   gameCardIconContainer: {
     width: 80,
@@ -337,15 +310,15 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   gameCardTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 6,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 4,
   },
   gameCardDescription: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-    lineHeight: 20,
+    color: '#666666',
+    lineHeight: 19,
     marginBottom: 10,
   },
   gameCardTags: {
@@ -366,7 +339,7 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
   },
   footerText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#AAAAAA',
     fontSize: 14,
   },
 });
