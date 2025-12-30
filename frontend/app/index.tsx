@@ -177,6 +177,32 @@ export default function MainMenu() {
             </View>
             <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
           </TouchableOpacity>
+
+          {/* Deadeye Fun Game Card */}
+          <TouchableOpacity
+            style={styles.gameCard}
+            onPress={() => setCurrentScreen('deadeye')}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.gameCardIcon, { backgroundColor: '#E53935' }]}>
+              <MaterialCommunityIcons name="crosshairs-gps" size={48} color="white" />
+            </View>
+            <View style={styles.gameCardContent}>
+              <Text style={styles.gameCardTitle}>Deadeye Fun</Text>
+              <Text style={styles.gameCardDescription}>
+                Sniper-style target shooting - calm & precise!
+              </Text>
+              <View style={styles.gameCardTags}>
+                <View style={[styles.tag, { backgroundColor: 'rgba(229, 57, 53, 0.2)' }]}>
+                  <Text style={[styles.tagText, { color: '#E53935' }]}>Aim</Text>
+                </View>
+                <View style={[styles.tag, { backgroundColor: 'rgba(156, 39, 176, 0.2)' }]}>
+                  <Text style={[styles.tagText, { color: '#9C27B0' }]}>Custom</Text>
+                </View>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
