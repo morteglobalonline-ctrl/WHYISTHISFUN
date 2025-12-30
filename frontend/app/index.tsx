@@ -142,8 +142,8 @@ export default function MainMenu() {
             onPress={() => setCurrentScreen('toiletchaos')}
             activeOpacity={0.85}
           >
-            <View style={[styles.gameCardIcon, { backgroundColor: '#5D4037' }]}>
-              <MaterialCommunityIcons name="toilet" size={48} color="white" />
+            <View style={styles.gameCardIconContainer}>
+              <Image source={GameIcons.toiletchaos} style={styles.gameCardIcon} />
             </View>
             <View style={styles.gameCardContent}>
               <Text style={styles.gameCardTitle}>Toilet Chaos</Text>
