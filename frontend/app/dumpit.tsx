@@ -37,13 +37,38 @@ const BUILT_IN_BACKGROUNDS = [
   { id: 'night', name: 'Night Shift', color: '#1A1A2E' },
 ];
 
-// Level configurations
+// Level configurations - Extended to 30 levels
 const LEVEL_CONFIGS = [
-  { requiredPatties: 2, binYOffset: 0 },      // Level 1: bottom
-  { requiredPatties: 3, binYOffset: -50 },    // Level 2: slightly higher
-  { requiredPatties: 4, binYOffset: -100 },   // Level 3: mid-low
-  { requiredPatties: 5, binYOffset: -160 },   // Level 4: mid
-  { requiredPatties: 7, binYOffset: -220 },   // Level 5: high
+  { requiredPatties: 2, binYOffset: 0 },       // Level 1: bottom
+  { requiredPatties: 3, binYOffset: -50 },     // Level 2: slightly higher
+  { requiredPatties: 4, binYOffset: -100 },    // Level 3: mid-low
+  { requiredPatties: 5, binYOffset: -160 },    // Level 4: mid
+  { requiredPatties: 7, binYOffset: -220 },    // Level 5: high
+  { requiredPatties: 3, binYOffset: -30 },     // Level 6
+  { requiredPatties: 4, binYOffset: -80 },     // Level 7
+  { requiredPatties: 5, binYOffset: -130 },    // Level 8
+  { requiredPatties: 6, binYOffset: -180 },    // Level 9
+  { requiredPatties: 8, binYOffset: -230 },    // Level 10
+  { requiredPatties: 4, binYOffset: -40 },     // Level 11
+  { requiredPatties: 5, binYOffset: -90 },     // Level 12
+  { requiredPatties: 6, binYOffset: -140 },    // Level 13
+  { requiredPatties: 7, binYOffset: -190 },    // Level 14
+  { requiredPatties: 9, binYOffset: -240 },    // Level 15
+  { requiredPatties: 5, binYOffset: -50 },     // Level 16
+  { requiredPatties: 6, binYOffset: -100 },    // Level 17
+  { requiredPatties: 7, binYOffset: -150 },    // Level 18
+  { requiredPatties: 8, binYOffset: -200 },    // Level 19
+  { requiredPatties: 10, binYOffset: -250 },   // Level 20
+  { requiredPatties: 6, binYOffset: -60 },     // Level 21
+  { requiredPatties: 7, binYOffset: -110 },    // Level 22
+  { requiredPatties: 8, binYOffset: -160 },    // Level 23
+  { requiredPatties: 9, binYOffset: -210 },    // Level 24
+  { requiredPatties: 11, binYOffset: -260 },   // Level 25
+  { requiredPatties: 7, binYOffset: -70 },     // Level 26
+  { requiredPatties: 8, binYOffset: -120 },    // Level 27
+  { requiredPatties: 9, binYOffset: -170 },    // Level 28
+  { requiredPatties: 10, binYOffset: -220 },   // Level 29
+  { requiredPatties: 12, binYOffset: -270 },   // Level 30
 ];
 
 // ==================== ITEM MODULE SYSTEM ====================
