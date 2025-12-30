@@ -303,12 +303,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
+  gameCardIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
   gameCardIcon: {
     width: 80,
     height: 80,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   gameCardContent: {
     flex: 1,
