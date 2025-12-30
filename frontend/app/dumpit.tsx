@@ -604,16 +604,17 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
   const nextLevel = useCallback(() => {
     if (currentLevel < TOTAL_LEVELS - 1) {
       setCurrentLevel(currentLevel + 1);
+      setActivePatty(null);
+      activePattyRef.current = null;
+      setDisposedCount(0);
+      disposedCountRef.current = 0;
+      setGameState('waiting');
+      setAimStart(null);
+      setAimEnd(null);
     } else {
-      setCurrentLevel(0); // Loop back
+      // Completed all 30 levels - show Coming Soon
+      setGameState('comingSoon');
     }
-    setActivePatty(null);
-    activePattyRef.current = null;
-    setDisposedCount(0);
-    disposedCountRef.current = 0;
-    setGameState('waiting');
-    setAimStart(null);
-    setAimEnd(null);
   }, [currentLevel]);
 
   // Launch patty from pan
