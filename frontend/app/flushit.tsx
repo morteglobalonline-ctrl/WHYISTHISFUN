@@ -476,15 +476,21 @@ export default function FlushItGame({ onBack }: FlushItProps) {
     const y = touch.locationY ?? touch.pageY ?? touch.clientY ?? 0;
 
     setIsFlowing(true);
-    setFlowOrigin({ x: BOWL_CENTER_X, y: BOWL_CENTER_Y - BOWL_RADIUS_Y * 0.6 });
+    // Stream origin at top of bowl
+    const originY = BOWL_CENTER_Y - BOWL_RADIUS_Y * 0.7;
+    setFlowOrigin({ x: BOWL_CENTER_X, y: originY });
     
-    // Calculate direction to touch point
+    // Calculate direction to touch point - NO CLAMPING to allow full reach
     const dx = x - BOWL_CENTER_X;
-    const dy = y - (BOWL_CENTER_Y - BOWL_RADIUS_Y * 0.6);
+    const dy = y - originY;
     const dist = Math.sqrt(dx * dx + dy * dy);
     
-    setFlowDirection({ x: dx / dist, y: dy / dist });
-    setFlowStrength(0.5);
+    if (dist > 5) {
+      setFlowDirection({ x: dx / dist, y: dy / dist });
+    } else {
+      setFlowDirection({ x: 0, y: 1 }); // Default downward
+    }
+    setFlowStrength(0.6);
   }, [gameState, BOWL_CENTER_X, BOWL_CENTER_Y, BOWL_RADIUS_Y]);
 
   const onTouchMove = useCallback((e: any) => {
@@ -494,15 +500,15 @@ export default function FlushItGame({ onBack }: FlushItProps) {
     const x = touch.locationX ?? touch.pageX ?? touch.clientX ?? 0;
     const y = touch.locationY ?? touch.pageY ?? touch.clientY ?? 0;
 
-    // Update direction
+    // Update direction - UNCLAMPED for full bowl reach including corners
     const dx = x - flowOrigin.x;
     const dy = y - flowOrigin.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     
-    if (dist > 10) {
+    if (dist > 8) {
       setFlowDirection({ x: dx / dist, y: dy / dist });
-      // Strength based on distance dragged
-      setFlowStrength(Math.min(1, dist / 150));
+      // Strength ramps up with distance for better control
+      setFlowStrength(Math.min(1, 0.4 + dist / 200));
     }
   }, [gameState, isFlowing, flowOrigin]);
 
