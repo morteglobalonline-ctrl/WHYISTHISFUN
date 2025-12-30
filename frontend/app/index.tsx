@@ -86,20 +86,10 @@ export default function MainMenu() {
   // Main Menu
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       
-      {/* Background gradient */}
-      <View style={styles.backgroundGradient}>
-        <View style={[styles.gradientLayer, { backgroundColor: '#1a1a2e' }]} />
-        <View style={[styles.gradientOverlay, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]} />
-      </View>
-
-      {/* Animated decorative elements */}
-      <View style={styles.decorContainer}>
-        <View style={[styles.decorCircle, styles.decorCircle1]} />
-        <View style={[styles.decorCircle, styles.decorCircle2]} />
-        <View style={[styles.decorCircle, styles.decorCircle3]} />
-      </View>
+      {/* Pure White Background */}
+      <View style={styles.background} />
 
       {/* Content */}
       <ScrollView style={styles.scrollContent} contentContainerStyle={styles.content}>
