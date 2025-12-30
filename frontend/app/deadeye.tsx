@@ -848,7 +848,7 @@ export default function DeadeyeGame({ onBack }: DeadeyeProps) {
       </View>
 
       {/* UI Overlay */}
-      {gameState !== 'select' && (
+      {gameState === 'playing' && (
         <View style={styles.uiOverlay}>
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Ionicons name="arrow-back" size={22} color="white" />
@@ -859,8 +859,8 @@ export default function DeadeyeGame({ onBack }: DeadeyeProps) {
             <Text style={styles.scoreText}>{score}</Text>
           </View>
 
-          <View style={styles.goalContainer}>
-            <Text style={styles.goalLabel}>Goal: 20</Text>
+          <View style={styles.endlessTag}>
+            <Text style={styles.endlessText}>ENDLESS</Text>
           </View>
 
           <View style={styles.bestContainer}>
@@ -885,25 +885,6 @@ export default function DeadeyeGame({ onBack }: DeadeyeProps) {
       {gameState === 'playing' && (
         <View style={styles.instructionOverlay} pointerEvents="none">
           <Text style={styles.instructionText}>Drag to aim • Release to shoot</Text>
-        </View>
-      )}
-
-      {/* Complete overlay */}
-      {gameState === 'complete' && (
-        <View style={styles.completeOverlay}>
-          <MaterialCommunityIcons name="trophy" size={80} color="#FFD700" />
-          <Text style={styles.completeTitle}>Great Shooting!</Text>
-          <Text style={styles.completeScore}>Score: {score}</Text>
-          <Text style={styles.completeBest}>Best: {bestScore}</Text>
-
-          <TouchableOpacity style={styles.playAgainButton} onPress={startGame}>
-            <Ionicons name="reload" size={24} color="white" />
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.changeTargetButton} onPress={() => setGameState('select')}>
-            <Text style={styles.changeTargetText}>Change Target</Text>
-          </TouchableOpacity>
         </View>
       )}
 
