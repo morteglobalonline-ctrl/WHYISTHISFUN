@@ -116,8 +116,8 @@ export default function MainMenu() {
             onPress={() => setCurrentScreen('crazyhead')}
             activeOpacity={0.85}
           >
-            <View style={[styles.gameCardIcon, { backgroundColor: '#FF5722' }]}>
-              <MaterialCommunityIcons name="emoticon-cool" size={48} color="white" />
+            <View style={styles.gameCardIconContainer}>
+              <Image source={GameIcons.crazyhead} style={styles.gameCardIcon} />
             </View>
             <View style={styles.gameCardContent}>
               <Text style={styles.gameCardTitle}>Crazy Head</Text>
