@@ -306,24 +306,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingTop: 80,
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  titleContainer: {
+  heroContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 28,
   },
-  title: {
-    fontSize: 38,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 16,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 8,
+  heroLogo: {
+    width: '100%',
+    height: 200,
   },
   gamesContainer: {
     flex: 1,
