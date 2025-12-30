@@ -184,7 +184,7 @@ export default function MainMenu() {
                 </View>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
+            <Ionicons name="chevron-forward" size={28} color="rgba(0,0,0,0.25)" />
           </TouchableOpacity>
 
           {/* Flush It Game Card */}
