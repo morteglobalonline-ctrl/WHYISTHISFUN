@@ -51,9 +51,36 @@ interface FlushObject {
   opacity: number;
   stuck: boolean;
   stickStrength: number;
+  washPower: number; // Accumulated wash power from stream
   isFlushing: boolean;
   iconType: IconType;
 }
+
+// Helper: Calculate distance from point to line segment
+const pointToSegmentDistance = (
+  px: number, py: number, 
+  x1: number, y1: number, 
+  x2: number, y2: number
+): { distance: number; closest: { x: number; y: number }; t: number } => {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lengthSq = dx * dx + dy * dy;
+  
+  if (lengthSq === 0) {
+    // Segment is a point
+    const dist = Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+    return { distance: dist, closest: { x: x1, y: y1 }, t: 0 };
+  }
+  
+  // Project point onto line, clamped to segment
+  let t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSq));
+  
+  const closestX = x1 + t * dx;
+  const closestY = y1 + t * dy;
+  const distance = Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
+  
+  return { distance, closest: { x: closestX, y: closestY }, t };
+};
 
 interface FlushItProps {
   onBack: () => void;
