@@ -195,6 +195,7 @@ export default function FlushItGame({ onBack }: FlushItProps) {
         opacity: 1,
         stuck: true,
         stickStrength: config.stickiness * (0.7 + Math.random() * 0.6),
+        washPower: 0,
         isFlushing: false,
         iconType: selectedIcon,
       });
