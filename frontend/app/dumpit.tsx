@@ -1914,4 +1914,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 17,
   },
+  comingSoonOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  comingSoonTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+  },
+  comingSoonSubtitle: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  backToMenuButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    marginTop: 40,
+  },
+  backToMenuText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
