@@ -103,11 +103,18 @@ export default function MainMenu() {
 
       {/* Content */}
       <ScrollView style={styles.scrollContent} contentContainerStyle={styles.content}>
-        {/* Title */}
-        <View style={styles.titleContainer}>
-          <MaterialCommunityIcons name="gamepad-variant" size={60} color="#4CAF50" />
-          <Text style={styles.title}>Mini Games</Text>
-          <Text style={styles.subtitle}>Choose your challenge!</Text>
+        {/* Hero Header Logo */}
+        <View style={styles.heroContainer}>
+          <Animated.Image
+            source={HeaderLogo}
+            style={[
+              styles.heroLogo,
+              {
+                transform: [{ scale: pulseAnim }],
+              },
+            ]}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Game Cards */}
