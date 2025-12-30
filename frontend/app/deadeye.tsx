@@ -1123,49 +1123,4 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
-  completeOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  completeTitle: {
-    color: '#FFD700',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginTop: 15,
-  },
-  completeScore: {
-    color: 'white',
-    fontSize: 22,
-    marginTop: 10,
-  },
-  completeBest: {
-    color: '#FFE082',
-    fontSize: 18,
-    marginTop: 5,
-  },
-  playAgainButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E53935',
-    paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    marginTop: 30,
-    gap: 10,
-  },
-  playAgainText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  changeTargetButton: {
-    marginTop: 15,
-    padding: 10,
-  },
-  changeTargetText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 15,
-  },
 });
