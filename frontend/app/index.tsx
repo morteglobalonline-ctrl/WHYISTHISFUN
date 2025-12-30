@@ -16,8 +16,9 @@ import DumpItGame from './dumpit';
 import CrazyHeadGame from './crazyhead';
 import ToiletChaosGame from './toiletchaos';
 import FlushItGame from './flushit';
+import DeadeyeGame from './deadeye';
 
-type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos' | 'flushit';
+type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos' | 'flushit' | 'deadeye';
 
 export default function MainMenu() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
