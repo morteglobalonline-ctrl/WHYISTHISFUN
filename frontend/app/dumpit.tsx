@@ -236,7 +236,7 @@ interface TrashBin {
   openingY: number;
 }
 
-const TOTAL_LEVELS = 5;
+const TOTAL_LEVELS = 30;
 
 interface DumpItGameProps {
   onBack: () => void;
