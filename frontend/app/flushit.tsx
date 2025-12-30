@@ -63,6 +63,7 @@ interface FlushObject {
   washPower: number; // Accumulated wash power from stream
   isFlushing: boolean;
   iconType: IconType;
+  beingWashed: boolean; // Currently under stream influence
 }
 
 // Helper: Calculate distance from point to line segment
