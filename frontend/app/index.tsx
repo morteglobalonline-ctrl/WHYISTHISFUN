@@ -146,6 +146,32 @@ export default function MainMenu() {
             </View>
             <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
           </TouchableOpacity>
+
+          {/* Flush It Game Card */}
+          <TouchableOpacity
+            style={styles.gameCard}
+            onPress={() => setCurrentScreen('flushit')}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.gameCardIcon, { backgroundColor: '#2196F3' }]}>
+              <MaterialCommunityIcons name="water" size={48} color="white" />
+            </View>
+            <View style={styles.gameCardContent}>
+              <Text style={styles.gameCardTitle}>Flush It</Text>
+              <Text style={styles.gameCardDescription}>
+                Clean the bowl with satisfying liquid streams!
+              </Text>
+              <View style={styles.gameCardTags}>
+                <View style={[styles.tag, { backgroundColor: 'rgba(33, 150, 243, 0.2)' }]}>
+                  <Text style={[styles.tagText, { color: '#2196F3' }]}>ASMR</Text>
+                </View>
+                <View style={[styles.tag, { backgroundColor: 'rgba(76, 175, 80, 0.2)' }]}>
+                  <Text style={[styles.tagText, { color: '#4CAF50' }]}>Satisfying</Text>
+                </View>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.5)" />
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
