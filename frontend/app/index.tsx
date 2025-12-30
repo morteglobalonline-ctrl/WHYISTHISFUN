@@ -37,6 +37,30 @@ type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos' | 'flushit' | 
 export default function MainMenu() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('menu');
+  
+  // Subtle pulse animation for hero header
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
+  useEffect(() => {
+    // Create a gentle breathing/pulse animation
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.03,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    
+    return () => pulse.stop();
+  }, [pulseAnim]);
 
   // Render the selected game
   if (currentScreen === 'dumpit') {
