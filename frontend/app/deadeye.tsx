@@ -74,7 +74,7 @@ export default function DeadeyeGame({ onBack }: DeadeyeProps) {
   const SCOPE_BOTTOM = GAME_HEIGHT - 150;
 
   // Game state
-  const [gameState, setGameState] = useState<'select' | 'playing' | 'complete'>('select');
+  const [gameState, setGameState] = useState<'select' | 'playing'>('select');
   const [selectedTarget, setSelectedTarget] = useState<TargetType>('poop');
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [targets, setTargets] = useState<Target[]>([]);
