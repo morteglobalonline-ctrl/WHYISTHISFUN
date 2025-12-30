@@ -624,15 +624,42 @@ export default function FlushItGame({ onBack }: FlushItProps) {
   const renderLiquidStream = () => {
     if (!isFlowing || flowStrength <= 0) return null;
 
-    const streamLength = 100 + flowStrength * 100;
+    const streamLength = 150 + flowStrength * 150; // Extended visual length
     const endX = flowOrigin.x + flowDirection.x * streamLength;
     const endY = flowOrigin.y + flowDirection.y * streamLength;
     
     // Wavy stream effect
     const wave = Math.sin(flowTimeRef.current * 0.2) * 5;
 
+    // Debug visualization - influence capsule
+    const debugElements = [];
+    if (DEBUG_STREAM) {
+      const influenceRadius = 85 + flowStrength * 50;
+      // Draw circles along the stream to show influence zone
+      for (let i = 0; i <= 5; i++) {
+        const t = i / 5;
+        const cx = flowOrigin.x + flowDirection.x * streamLength * t;
+        const cy = flowOrigin.y + flowDirection.y * streamLength * t;
+        debugElements.push(
+          <Circle 
+            key={`debug-${i}`}
+            cx={cx} 
+            cy={cy} 
+            r={influenceRadius} 
+            fill="none" 
+            stroke="rgba(0,255,0,0.3)" 
+            strokeWidth={2}
+            strokeDasharray="5,5"
+          />
+        );
+      }
+    }
+
     return (
       <G>
+        {/* Debug influence zone */}
+        {debugElements}
+        
         {/* Main stream */}
         <Path
           d={`M ${flowOrigin.x} ${flowOrigin.y} 
@@ -640,10 +667,10 @@ export default function FlushItGame({ onBack }: FlushItProps) {
                 ${flowOrigin.y + flowDirection.y * streamLength * 0.5}
                 ${endX} ${endY}`}
           stroke="#FFE082"
-          strokeWidth={12 + flowStrength * 8}
+          strokeWidth={14 + flowStrength * 10}
           strokeLinecap="round"
           fill="none"
-          opacity={0.8}
+          opacity={0.85}
         />
         {/* Highlight */}
         <Path
@@ -652,17 +679,17 @@ export default function FlushItGame({ onBack }: FlushItProps) {
                 ${flowOrigin.y + flowDirection.y * streamLength * 0.5}
                 ${endX} ${endY}`}
           stroke="#FFF59D"
-          strokeWidth={4 + flowStrength * 3}
+          strokeWidth={5 + flowStrength * 4}
           strokeLinecap="round"
           fill="none"
-          opacity={0.6}
+          opacity={0.7}
         />
         {/* Splash at end */}
         {flowStrength > 0.3 && (
           <>
-            <Circle cx={endX + wave * 0.5} cy={endY} r={8 + flowStrength * 5} fill="#FFE082" opacity={0.5} />
-            <Circle cx={endX - 5 + wave} cy={endY + 5} r={4} fill="#FFF59D" opacity={0.4} />
-            <Circle cx={endX + 8} cy={endY - 3} r={3} fill="#FFF59D" opacity={0.3} />
+            <Circle cx={endX + wave * 0.5} cy={endY} r={10 + flowStrength * 8} fill="#FFE082" opacity={0.5} />
+            <Circle cx={endX - 5 + wave} cy={endY + 5} r={5} fill="#FFF59D" opacity={0.4} />
+            <Circle cx={endX + 8} cy={endY - 3} r={4} fill="#FFF59D" opacity={0.3} />
           </>
         )}
       </G>
