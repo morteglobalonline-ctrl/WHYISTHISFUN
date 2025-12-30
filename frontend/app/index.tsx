@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   ScrollView,
   Image,
+  Animated,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -20,6 +21,9 @@ const GameIcons = {
   flushit: require('../assets/icons/icon_flushit.png'),
   deadeye: require('../assets/icons/icon_deadeye.png'),
 };
+
+// Import header logo
+const HeaderLogo = require('../assets/header_logo.png');
 
 // Import game components
 import DumpItGame from './dumpit';
