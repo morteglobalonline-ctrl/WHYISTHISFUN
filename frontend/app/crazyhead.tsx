@@ -522,19 +522,20 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const nextLevel = useCallback(() => {
     if (currentLevel < TOTAL_LEVELS - 1) {
       setCurrentLevel(currentLevel + 1);
+      setHeadshots(0);
+      headshotsRef.current = 0;
+      setProjectile(null);
+      projectileRef.current = null;
+      setHitEffects([]);
+      setReactionType(null);
+      setHeadOffset({ x: 0, y: 0 });
+      setAimStart(null);
+      setAimEnd(null);
+      setGameState('ready');
     } else {
-      setCurrentLevel(0); // Loop back
+      // Completed all 30 levels - show Coming Soon
+      setGameState('comingSoon');
     }
-    setHeadshots(0);
-    headshotsRef.current = 0;
-    setProjectile(null);
-    projectileRef.current = null;
-    setHitEffects([]);
-    setReactionType(null);
-    setHeadOffset({ x: 0, y: 0 });
-    setAimStart(null);
-    setAimEnd(null);
-    setGameState('ready');
   }, [currentLevel]);
 
   // Touch handlers
