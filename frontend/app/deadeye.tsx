@@ -417,13 +417,9 @@ export default function DeadeyeGame({ onBack }: DeadeyeProps) {
           .filter(effect => effect.age < 40);
       });
 
-      // Check for game completion (optional - could be endless)
-      if (scoreRef.current >= 20) {
-        if (scoreRef.current > bestScoreRef.current) {
-          saveBestScore(scoreRef.current);
-        }
-        setGameState('complete');
-        return;
+      // Endless mode - automatically update best score when exceeded
+      if (scoreRef.current > bestScoreRef.current) {
+        saveBestScore(scoreRef.current);
       }
 
       gameLoopRef.current = requestAnimationFrame(loop);
