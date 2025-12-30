@@ -46,13 +46,38 @@ const BOUNCE = 0.3;
 const MAX_ARROW_LENGTH = 160;
 const LAUNCH_POWER_MULTIPLIER = 0.22;
 
-// Level configurations (same as Dump It)
+// Level configurations - Extended to 30 levels
 const LEVEL_CONFIGS = [
   { required: 2 },   // Level 1
   { required: 3 },   // Level 2
   { required: 4 },   // Level 3
   { required: 5 },   // Level 4
   { required: 7 },   // Level 5
+  { required: 3 },   // Level 6
+  { required: 4 },   // Level 7
+  { required: 5 },   // Level 8
+  { required: 6 },   // Level 9
+  { required: 8 },   // Level 10
+  { required: 4 },   // Level 11
+  { required: 5 },   // Level 12
+  { required: 6 },   // Level 13
+  { required: 7 },   // Level 14
+  { required: 9 },   // Level 15
+  { required: 5 },   // Level 16
+  { required: 6 },   // Level 17
+  { required: 7 },   // Level 18
+  { required: 8 },   // Level 19
+  { required: 10 },  // Level 20
+  { required: 6 },   // Level 21
+  { required: 7 },   // Level 22
+  { required: 8 },   // Level 23
+  { required: 9 },   // Level 24
+  { required: 11 },  // Level 25
+  { required: 7 },   // Level 26
+  { required: 8 },   // Level 27
+  { required: 9 },   // Level 28
+  { required: 10 },  // Level 29
+  { required: 12 },  // Level 30
 ];
 
 // Crazy Head specific items with hit effects
