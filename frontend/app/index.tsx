@@ -41,6 +41,10 @@ export default function MainMenu() {
     return <FlushItGame onBack={() => setCurrentScreen('menu')} />;
   }
 
+  if (currentScreen === 'deadeye') {
+    return <DeadeyeGame onBack={() => setCurrentScreen('menu')} />;
+  }
+
   // Main Menu
   return (
     <GestureHandlerRootView style={styles.container}>
