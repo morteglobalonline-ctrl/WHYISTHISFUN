@@ -1161,6 +1161,18 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </View>
       )}
 
+      {/* Coming Soon Overlay - After Level 30 */}
+      {gameState === 'comingSoon' && (
+        <View style={styles.comingSoonOverlay}>
+          <MaterialCommunityIcons name="rocket-launch" size={80} color="#FF5722" />
+          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+          <Text style={styles.comingSoonSubtitle}>New levels are on the way.</Text>
+          <TouchableOpacity style={styles.backToMenuButton} onPress={onBack}>
+            <Text style={styles.backToMenuText}>Back to Menu</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Item selector bar */}
       {(gameState === 'ready' || gameState === 'aiming') && renderItemSelector()}
 
