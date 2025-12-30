@@ -208,6 +208,7 @@ export default function FlushItGame({ onBack }: FlushItProps) {
         washPower: 0,
         isFlushing: false,
         iconType: selectedIcon,
+        beingWashed: false,
       });
     }
 
