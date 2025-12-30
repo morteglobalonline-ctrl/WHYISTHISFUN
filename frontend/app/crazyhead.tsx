@@ -189,7 +189,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
 
   // Game state
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail'>('setup');
+  const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'comingSoon'>('setup');
   const [headshots, setHeadshots] = useState(0);
   const [selectedItemId, setSelectedItemId] = useState<string>('poop');
 
