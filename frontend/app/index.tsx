@@ -6,10 +6,20 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   ScrollView,
+  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+// Import game icons
+const GameIcons = {
+  dumpit: require('../assets/icons/icon_dumpit.png'),
+  crazyhead: require('../assets/icons/icon_crazyhead.png'),
+  toiletchaos: require('../assets/icons/icon_toiletchaos.png'),
+  flushit: require('../assets/icons/icon_flushit.png'),
+  deadeye: require('../assets/icons/icon_deadeye.png'),
+};
 
 // Import game components
 import DumpItGame from './dumpit';
