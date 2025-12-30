@@ -531,9 +531,25 @@ export default function FlushItGame({ onBack }: FlushItProps) {
           </>
         )}
 
-        {/* Stuck indicator (small glow) */}
-        {obj.stuck && obj.stickStrength > 0.3 && (
-          <Circle cx={0} cy={0} r={20} fill="none" stroke="rgba(255,200,0,0.3)" strokeWidth={2} />
+        {/* Stuck indicator - shows wash progress */}
+        {obj.stuck && (
+          <G>
+            {/* Base stuck ring */}
+            <Circle cx={0} cy={0} r={22} fill="none" stroke="rgba(255,150,0,0.4)" strokeWidth={2} />
+            {/* Wash progress indicator (shrinks as washPower increases) */}
+            {obj.washPower > 0 && (
+              <Circle 
+                cx={0} 
+                cy={0} 
+                r={22} 
+                fill="none" 
+                stroke="rgba(100,200,255,0.6)" 
+                strokeWidth={3}
+                strokeDasharray={`${obj.washPower * 140} 140`}
+                transform="rotate(-90)"
+              />
+            )}
+          </G>
         )}
       </G>
     );
