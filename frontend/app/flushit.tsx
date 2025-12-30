@@ -20,6 +20,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Storage key for high score
 const BEST_FLUSH_KEY = 'flushIt_bestScore';
 
+// DEBUG FLAG - set to true to visualize stream influence zone
+const DEBUG_STREAM = false;
+
+// Smoothstep helper for smooth falloff
+const smoothstep = (edge0: number, edge1: number, x: number): number => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
+
 // Icon types
 type IconType = 'poop' | 'teddy' | 'smiley' | 'custom';
 
