@@ -236,15 +236,19 @@ export default function FlushItGame({ onBack }: FlushItProps) {
   const updatePhysics = useCallback(() => {
     const config = ICON_CONFIGS.find(c => c.id === selectedIcon) || ICON_CONFIGS[0];
     
-    // Calculate stream endpoint for line segment collision
-    const streamLength = 180 + flowStrength * 120;
+    // Calculate stream endpoint - EXTENDED for full bowl reach
+    const streamLength = 250 + flowStrength * 150; // Longer reach
     const streamEndX = flowOrigin.x + flowDirection.x * streamLength;
     const streamEndY = flowOrigin.y + flowDirection.y * streamLength;
     
-    // Stream influence radius (wider than visual for reliable hits)
-    const STREAM_INFLUENCE_RADIUS = 70 + flowStrength * 40;
-    // Detach threshold - amount of washPower needed to unstick
-    const DETACH_THRESHOLD = 0.4 + config.stickiness * 0.4;
+    // Stream influence radius (capsule radius around the line segment)
+    const STREAM_INFLUENCE_RADIUS = 85 + flowStrength * 50; // Wider influence
+    // Detach threshold - washPower needed to unstick
+    const DETACH_THRESHOLD = 0.35 + config.stickiness * 0.35;
+    // Minimum force floor - guarantees reaction
+    const MIN_FORCE = 0.25;
+    // Max velocity cap to prevent chaos
+    const MAX_SPEED = 8;
     
     const updatedObjects = objectsRef.current.map(obj => {
       if (obj.isFlushing) {
@@ -258,7 +262,7 @@ export default function FlushItGame({ onBack }: FlushItProps) {
         };
       }
 
-      let newObj = { ...obj };
+      let newObj = { ...obj, beingWashed: false };
 
       // Apply liquid force if flowing
       if (isFlowing && flowStrength > 0) {
@@ -269,59 +273,88 @@ export default function FlushItGame({ onBack }: FlushItProps) {
           streamEndX, streamEndY
         );
         
-        // Check if object is within stream influence zone
+        // Check if object is within stream influence zone (capsule collision)
         if (distance < STREAM_INFLUENCE_RADIUS) {
-          // Calculate force based on proximity (closer = stronger)
-          const proximityFactor = 1 - (distance / STREAM_INFLUENCE_RADIUS);
-          // Force is stronger at the stream source (t=0) and weaker at end (t=1)
-          const streamPositionFactor = 1 - t * 0.3;
-          const baseForce = proximityFactor * streamPositionFactor * flowStrength;
+          newObj.beingWashed = true;
           
-          // Minimum force floor - ensures stuck items always feel the stream
-          const MIN_FORCE = 0.15;
-          const effectiveForce = Math.max(baseForce, MIN_FORCE) * 1.2;
+          // === FORCE DIRECTION: Vector from closest point C to object center O ===
+          let pushX = obj.x - closest.x;
+          let pushY = obj.y - closest.y;
+          const pushDist = Math.sqrt(pushX * pushX + pushY * pushY);
           
-          // Main force along stream direction
-          const mainForce = effectiveForce * 0.8;
-          newObj.vx += flowDirection.x * mainForce;
-          newObj.vy += flowDirection.y * mainForce;
+          // Normalize or fallback to stream perpendicular if too close
+          if (pushDist > 0.1) {
+            pushX /= pushDist;
+            pushY /= pushDist;
+          } else {
+            // Object is right on the stream line - use perpendicular + stream direction
+            pushX = -flowDirection.y * 0.5 + flowDirection.x;
+            pushY = flowDirection.x * 0.5 + flowDirection.y;
+            const fallbackDist = Math.sqrt(pushX * pushX + pushY * pushY);
+            pushX /= fallbackDist;
+            pushY /= fallbackDist;
+          }
           
-          // Lateral component - helps items slide around bowl curvature
-          const lateralX = -flowDirection.y; // Perpendicular to flow
-          const lateralY = flowDirection.x;
-          const lateralBias = (obj.x - closest.x) > 0 ? 0.3 : -0.3;
-          newObj.vx += lateralX * effectiveForce * lateralBias;
-          newObj.vy += lateralY * effectiveForce * lateralBias;
+          // === FORCE STRENGTH with smoothstep falloff ===
+          const proximityFactor = smoothstep(1, 0, distance / STREAM_INFLUENCE_RADIUS);
+          // Stronger at source, slightly weaker at end
+          const streamPosFactor = 1 - t * 0.2;
+          const baseStrength = proximityFactor * streamPosFactor * flowStrength;
           
-          // Accumulate wash power for stuck items
+          // Ensure minimum force is always applied
+          const effectiveForce = Math.max(MIN_FORCE, baseStrength) * 1.5;
+          
+          // === APPLY FORCE EVERY FRAME ===
+          // Main push force (away from stream center)
+          const pushForce = effectiveForce * 0.7;
+          newObj.vx += pushX * pushForce;
+          newObj.vy += pushY * pushForce;
+          
+          // Secondary force along stream direction (carries objects)
+          const carryForce = effectiveForce * 0.4;
+          newObj.vx += flowDirection.x * carryForce;
+          newObj.vy += flowDirection.y * carryForce;
+          
+          // === STUCK OBJECT HANDLING ===
           if (newObj.stuck) {
-            // Faster accumulation when closer to stream center
-            const washRate = effectiveForce * 0.08;
+            // Reduce friction while being washed (static friction killer)
+            // Add guaranteed velocity floor for stuck objects
+            const guaranteedVel = MIN_FORCE * 0.8;
+            if (Math.abs(newObj.vx) < guaranteedVel) {
+              newObj.vx += pushX * guaranteedVel + flowDirection.x * guaranteedVel * 0.5;
+            }
+            if (Math.abs(newObj.vy) < guaranteedVel) {
+              newObj.vy += pushY * guaranteedVel + flowDirection.y * guaranteedVel * 0.5;
+            }
+            
+            // Accumulate wash power faster when closer
+            const washRate = effectiveForce * 0.12;
             newObj.washPower += washRate;
             
-            // Jitter/wiggle effect while stuck (shows stream is affecting it)
-            newObj.rotation += (Math.random() - 0.5) * effectiveForce * 15;
-            newObj.rotationSpeed += (Math.random() - 0.5) * effectiveForce * 3;
+            // Visible wiggle/jitter effect while stuck
+            newObj.rotation += (Math.random() - 0.5) * effectiveForce * 20;
+            newObj.rotationSpeed += (Math.random() - 0.5) * effectiveForce * 4;
             
-            // Slight position jitter when stuck
-            if (newObj.washPower < DETACH_THRESHOLD * 0.8) {
-              newObj.x += (Math.random() - 0.5) * effectiveForce * 2;
-              newObj.y += (Math.random() - 0.5) * effectiveForce * 2;
-            }
+            // Position jitter shows stream is affecting it
+            const jitterAmount = effectiveForce * 2.5;
+            newObj.x += (Math.random() - 0.5) * jitterAmount;
+            newObj.y += (Math.random() - 0.5) * jitterAmount;
             
             // Check if accumulated enough wash power to detach
             if (newObj.washPower >= DETACH_THRESHOLD) {
               newObj.stuck = false;
               newObj.stickStrength = 0;
-              // Give initial push when detaching
-              newObj.vx += flowDirection.x * 2;
-              newObj.vy += flowDirection.y * 2;
+              
+              // === DETACH IMPULSE - visible break free ===
+              const impulseStrength = 2.5;
+              newObj.vx += pushX * impulseStrength + flowDirection.x * impulseStrength;
+              newObj.vy += pushY * impulseStrength + flowDirection.y * impulseStrength;
             }
           }
           
-          // Add rotation from flow (more when not stuck)
-          const rotationMultiplier = newObj.stuck ? 0.5 : 2;
-          newObj.rotationSpeed += flowDirection.x * effectiveForce * rotationMultiplier;
+          // Add rotation from flow
+          const rotMult = newObj.stuck ? 1 : 3;
+          newObj.rotationSpeed += (pushX + flowDirection.x) * effectiveForce * rotMult;
         }
       }
 
@@ -332,38 +365,53 @@ export default function FlushItGame({ onBack }: FlushItProps) {
         const toDrainDist = Math.sqrt(toDrainX * toDrainX + toDrainY * toDrainY);
         
         // Stronger pull towards drain
-        newObj.vx += (toDrainX / toDrainDist) * 0.12;
-        newObj.vy += (toDrainY / toDrainDist) * 0.18;
+        newObj.vx += (toDrainX / toDrainDist) * 0.15;
+        newObj.vy += (toDrainY / toDrainDist) * 0.22;
       }
 
-      // Apply friction (higher for stuck, lower for sliding)
-      const friction = newObj.stuck ? 0.7 : 0.96;
+      // Apply friction - REDUCED friction while being washed
+      let friction: number;
+      if (newObj.beingWashed && newObj.stuck) {
+        friction = 0.85; // Much less friction when stream is hitting stuck object
+      } else if (newObj.stuck) {
+        friction = 0.65;
+      } else {
+        friction = 0.96;
+      }
       newObj.vx *= friction;
       newObj.vy *= friction;
-      newObj.rotationSpeed *= 0.92;
+      newObj.rotationSpeed *= 0.9;
 
-      // Update position (stuck items move less)
+      // === CAP VELOCITY to prevent chaos ===
+      const speed = Math.sqrt(newObj.vx * newObj.vx + newObj.vy * newObj.vy);
+      if (speed > MAX_SPEED) {
+        newObj.vx = (newObj.vx / speed) * MAX_SPEED;
+        newObj.vy = (newObj.vy / speed) * MAX_SPEED;
+      }
+
+      // Update position - stuck items move MORE now when being washed
       if (newObj.stuck) {
-        newObj.x += newObj.vx * 0.3;
-        newObj.y += newObj.vy * 0.3;
+        const moveScale = newObj.beingWashed ? 0.6 : 0.25;
+        newObj.x += newObj.vx * moveScale;
+        newObj.y += newObj.vy * moveScale;
       } else {
         newObj.x += newObj.vx;
         newObj.y += newObj.vy;
       }
       newObj.rotation += newObj.rotationSpeed;
 
-      // Keep within bowl bounds (ellipse constraint) - less aggressive clamping
+      // Keep within bowl bounds (ellipse constraint) - RELAXED for edge items
       const relX = (newObj.x - BOWL_CENTER_X) / BOWL_RADIUS_X;
       const relY = (newObj.y - BOWL_CENTER_Y) / BOWL_RADIUS_Y;
       const ellipseDist = Math.sqrt(relX * relX + relY * relY);
       
-      if (ellipseDist > 0.92) {
+      if (ellipseDist > 0.95) { // Slightly more permissive
         const angle = Math.atan2(relY, relX);
-        newObj.x = BOWL_CENTER_X + Math.cos(angle) * BOWL_RADIUS_X * 0.9;
-        newObj.y = BOWL_CENTER_Y + Math.sin(angle) * BOWL_RADIUS_Y * 0.9;
-        // Softer bounce off walls
-        newObj.vx *= -0.2;
-        newObj.vy *= -0.2;
+        newObj.x = BOWL_CENTER_X + Math.cos(angle) * BOWL_RADIUS_X * 0.93;
+        newObj.y = BOWL_CENTER_Y + Math.sin(angle) * BOWL_RADIUS_Y * 0.93;
+        // Softer bounce
+        newObj.vx *= -0.15;
+        newObj.vy *= -0.15;
       }
 
       // Check if entering drain
