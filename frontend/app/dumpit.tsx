@@ -1542,6 +1542,18 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
         </View>
       )}
 
+      {/* Coming Soon Overlay - After Level 30 */}
+      {gameState === 'comingSoon' && (
+        <View style={styles.comingSoonOverlay}>
+          <MaterialCommunityIcons name="rocket-launch" size={80} color="#4CAF50" />
+          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+          <Text style={styles.comingSoonSubtitle}>New levels are on the way.</Text>
+          <TouchableOpacity style={styles.backToMenuButton} onPress={onBack}>
+            <Text style={styles.backToMenuText}>Back to Menu</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {renderSettingsModal()}
       {renderModsModal()}
     </GestureHandlerRootView>
