@@ -90,8 +90,8 @@ export default function MainMenu() {
             onPress={() => setCurrentScreen('dumpit')}
             activeOpacity={0.85}
           >
-            <View style={[styles.gameCardIcon, { backgroundColor: '#4CAF50' }]}>
-              <MaterialCommunityIcons name="delete" size={48} color="white" />
+            <View style={styles.gameCardIconContainer}>
+              <Image source={GameIcons.dumpit} style={styles.gameCardIcon} />
             </View>
             <View style={styles.gameCardContent}>
               <Text style={styles.gameCardTitle}>Dump It</Text>
