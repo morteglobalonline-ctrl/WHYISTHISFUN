@@ -378,7 +378,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const spawnProjectile = useCallback(() => {
     const item = CRAZY_HEAD_ITEMS.find(i => i.id === selectedItemId) || CRAZY_HEAD_ITEMS[0];
     const newProjectile: Projectile = {
-      id: Date.now().toString(),
+      id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       x: launcherX,
       y: LAUNCHER_Y - 40,
       vx: 0,
