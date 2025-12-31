@@ -561,26 +561,6 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
     };
   }, [gameState, updatePhysics]);
 
-  const handleWin = useCallback(() => {
-    setGameState('win');
-    if (gameLoopRef.current) {
-      cancelAnimationFrame(gameLoopRef.current);
-    }
-    setTimeout(() => {
-      nextLevel();
-    }, 2000);
-  }, [nextLevel]);
-
-  const handleFail = useCallback(() => {
-    setGameState('fail');
-    if (gameLoopRef.current) {
-      cancelAnimationFrame(gameLoopRef.current);
-    }
-    setTimeout(() => {
-      restartLevel();
-    }, 1500);
-  }, [restartLevel]);
-
   const restartLevel = useCallback(() => {
     setActivePatty(null);
     activePattyRef.current = null;
@@ -616,6 +596,26 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
       setGameState('comingSoon');
     }
   }, [currentLevel]);
+
+  const handleWin = useCallback(() => {
+    setGameState('win');
+    if (gameLoopRef.current) {
+      cancelAnimationFrame(gameLoopRef.current);
+    }
+    setTimeout(() => {
+      nextLevel();
+    }, 2000);
+  }, [nextLevel]);
+
+  const handleFail = useCallback(() => {
+    setGameState('fail');
+    if (gameLoopRef.current) {
+      cancelAnimationFrame(gameLoopRef.current);
+    }
+    setTimeout(() => {
+      restartLevel();
+    }, 1500);
+  }, [restartLevel]);
 
   // Launch patty from pan
   const launchPatty = useCallback((direction: Point, power: number) => {
