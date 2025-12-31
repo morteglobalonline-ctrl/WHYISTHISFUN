@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200">
+  <rect width="100%" height="100%" fill="#FF5722"/>
+  <rect x="4" y="4" width="792" height="192" fill="none" stroke="#E64A19" stroke-width="4"/>
+  <text x="400" y="110" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">BANNER PLACEHOLDER (800×200)</text>
+</svg>
