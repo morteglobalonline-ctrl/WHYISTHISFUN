@@ -1278,6 +1278,10 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
             <Ionicons name="camera-outline" size={28} color="white" />
             <Text style={styles.uploadButtonText}>Choose Head Image</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.uploadButton, { backgroundColor: '#9C27B0', marginTop: 10 }]} onPress={loadDemoImage}>
+            <Ionicons name="image-outline" size={28} color="white" />
+            <Text style={styles.uploadButtonText}>Test Demo Image</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.skipButton} onPress={() => { hasStartedPlayingRef.current = true; setHasStartedPlaying(true); setGameState('ready'); }}>
             <Text style={styles.skipButtonText}>Play with Default Face</Text>
           </TouchableOpacity>
