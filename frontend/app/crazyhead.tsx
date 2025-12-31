@@ -240,6 +240,34 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const levelConfig = LEVEL_CONFIGS[currentLevel] || LEVEL_CONFIGS[0];
   const currentItem = CRAZY_HEAD_ITEMS.find(i => i.id === selectedItemId) || CRAZY_HEAD_ITEMS[0];
 
+  // TEST: Load demo image for focus selector demonstration
+  const loadDemoImage = async () => {
+    // Use a sample image URL for testing
+    const testImageUrl = 'https://picsum.photos/600/600';
+    try {
+      const response = await fetch(testImageUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setTempImage(base64);
+        setTempImageUri(testImageUrl);
+        setTempImageSize({ width: 600, height: 600 });
+        setTempFocusPoint({ x: 0.5, y: 0.5 });
+        setShowFocusSelector(true);
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.log('Demo image load failed, using placeholder');
+      // Fallback: create a colored placeholder
+      setTempImage('https://via.placeholder.com/600x600/FF5722/FFFFFF?text=Test+Face');
+      setTempImageUri('https://via.placeholder.com/600x600/FF5722/FFFFFF?text=Test+Face');
+      setTempImageSize({ width: 600, height: 600 });
+      setTempFocusPoint({ x: 0.5, y: 0.5 });
+      setShowFocusSelector(true);
+    }
+  };
+
   // Pick head image
   const pickHeadImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
