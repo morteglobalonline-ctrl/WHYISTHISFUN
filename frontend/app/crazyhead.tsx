@@ -18,6 +18,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
+// Reward images (placeholders until final assets provided)
+// Expected: reward_banner.png (800x200), reward_tshirt.png (600x600)
+const REWARD_BANNER = require('../assets/rewards/reward_banner.png');
+const REWARD_TSHIRT = require('../assets/rewards/reward_tshirt.png');
+
 // Sound effects helper - plays short synthesized sounds
 const playHitSound = async (type: string) => {
   try {
