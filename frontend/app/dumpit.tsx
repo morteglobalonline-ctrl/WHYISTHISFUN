@@ -247,8 +247,7 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
   const GAME_WIDTH = windowWidth;
   const GAME_HEIGHT = windowHeight;
 
-  // TEMP: Start at level 28 to test progression to 30
-  const [currentLevel, setCurrentLevel] = useState(28);
+  const [currentLevel, setCurrentLevel] = useState(0);
   const [gameState, setGameState] = useState<'waiting' | 'playing' | 'aiming' | 'win' | 'fail' | 'comingSoon'>('waiting');
   const [activePatty, setActivePatty] = useState<Patty | null>(null);
   const [disposedCount, setDisposedCount] = useState(0);
