@@ -265,18 +265,112 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     }
   };
 
-  // Confirm focus point selection
-  const confirmFocusPoint = () => {
-    if (tempImage) {
-      setHeadImage(tempImage);
-      setFocusPoint(tempFocusPoint);
+  // Confirm focus point selection - crop the image based on focus circle
+  const confirmFocusPoint = async () => {
+    if (!tempImageUri || !tempImage) return;
+    
+    setIsCropping(true);
+    
+    try {
+      // The focus selector UI is 280x280 pixels
+      // The focus circle is 110x110 (radius 55)
+      const DISPLAY_SIZE = 280;
+      const CIRCLE_RADIUS = 55; // Half of 110
+      
+      // Calculate the scale from display to original image
+      const originalWidth = tempImageSize.width;
+      const originalHeight = tempImageSize.height;
+      
+      // The image is displayed with "cover" mode, so we need to figure out the scale
+      const displayAspect = 1; // Display is square (280x280)
+      const imageAspect = originalWidth / originalHeight;
+      
+      let scale: number;
+      let offsetX = 0;
+      let offsetY = 0;
+      
+      if (imageAspect > displayAspect) {
+        // Image is wider - height fills, width is cropped
+        scale = originalHeight / DISPLAY_SIZE;
+        const scaledWidth = originalWidth / scale;
+        offsetX = (scaledWidth - DISPLAY_SIZE) / 2;
+      } else {
+        // Image is taller - width fills, height is cropped
+        scale = originalWidth / DISPLAY_SIZE;
+        const scaledHeight = originalHeight / scale;
+        offsetY = (scaledHeight - DISPLAY_SIZE) / 2;
+      }
+      
+      // Calculate crop region in original image coordinates
+      // Focus point is normalized (0-1) relative to the 280x280 display
+      const displayCenterX = tempFocusPoint.x * DISPLAY_SIZE;
+      const displayCenterY = tempFocusPoint.y * DISPLAY_SIZE;
+      
+      // Convert to original image coordinates
+      const originalCenterX = (displayCenterX + offsetX) * scale;
+      const originalCenterY = (displayCenterY + offsetY) * scale;
+      
+      // Circle radius in original coordinates
+      const originalRadius = CIRCLE_RADIUS * scale;
+      
+      // Calculate crop bounds (make it square)
+      const cropSize = originalRadius * 2;
+      let cropX = originalCenterX - originalRadius;
+      let cropY = originalCenterY - originalRadius;
+      
+      // Clamp to image bounds
+      cropX = Math.max(0, Math.min(originalWidth - cropSize, cropX));
+      cropY = Math.max(0, Math.min(originalHeight - cropSize, cropY));
+      
+      // Ensure crop size doesn't exceed image
+      const finalCropSize = Math.min(cropSize, originalWidth - cropX, originalHeight - cropY);
+      
+      // Crop and resize the image
+      const manipResult = await ImageManipulator.manipulateAsync(
+        tempImageUri,
+        [
+          {
+            crop: {
+              originX: Math.round(cropX),
+              originY: Math.round(cropY),
+              width: Math.round(finalCropSize),
+              height: Math.round(finalCropSize),
+            },
+          },
+          {
+            resize: { width: 512, height: 512 },
+          },
+        ],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.PNG, base64: true }
+      );
+      
+      // Use the cropped image
+      const croppedImageUri = `data:image/png;base64,${manipResult.base64}`;
+      setHeadImage(croppedImageUri);
+      setFocusPoint({ x: 0.5, y: 0.5 }); // Center since we cropped to the focus
       setShowFocusSelector(false);
       setTempImage(null);
+      setTempImageUri(null);
       hasStartedPlayingRef.current = true;
       setHasStartedPlaying(true);
       if (gameState === 'setup') {
         setGameState('ready');
       }
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      // Fallback to original behavior if cropping fails
+      setHeadImage(tempImage);
+      setFocusPoint(tempFocusPoint);
+      setShowFocusSelector(false);
+      setTempImage(null);
+      setTempImageUri(null);
+      hasStartedPlayingRef.current = true;
+      setHasStartedPlaying(true);
+      if (gameState === 'setup') {
+        setGameState('ready');
+      }
+    } finally {
+      setIsCropping(false);
     }
   };
 
