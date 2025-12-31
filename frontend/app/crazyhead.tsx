@@ -1119,8 +1119,8 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Floating Banner - above character during levels 1-29 */}
-      {(gameState === 'ready' || gameState === 'aiming' || gameState === 'flying' || gameState === 'win' || gameState === 'fail') && currentLevel < TOTAL_LEVELS - 1 && gameState !== 'reward' && (
+      {/* Floating Banner - above character during levels 1-29 ONLY */}
+      {gameState !== 'reward' && gameState !== 'setup' && currentLevel < TOTAL_LEVELS - 1 && (
         <View style={styles.floatingBannerContainer} pointerEvents="none">
           <Image 
             source={REWARD_BANNER} 
