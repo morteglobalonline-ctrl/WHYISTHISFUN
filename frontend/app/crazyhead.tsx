@@ -1118,6 +1118,13 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </TouchableOpacity>
       </View>
 
+      {/* Hint text - subtle teaser before Level 30 */}
+      {(gameState === 'ready' || gameState === 'aiming' || gameState === 'flying') && currentLevel < TOTAL_LEVELS - 1 && (
+        <View style={styles.hintContainer} pointerEvents="none">
+          <Text style={styles.hintText}>Wait for the surprise…</Text>
+        </View>
+      )}
+
       {/* Setup overlay (before head image is selected) */}
       {gameState === 'setup' && (
         <View style={styles.setupOverlay}>
