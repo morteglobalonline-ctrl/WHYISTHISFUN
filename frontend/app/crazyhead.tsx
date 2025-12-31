@@ -204,8 +204,11 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const [focusPoint, setFocusPoint] = useState<Point>({ x: 0.5, y: 0.5 });
   const [showFocusSelector, setShowFocusSelector] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
+  const [tempImageUri, setTempImageUri] = useState<string | null>(null); // For cropping
+  const [tempImageSize, setTempImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [tempFocusPoint, setTempFocusPoint] = useState<Point>({ x: 0.5, y: 0.5 });
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
 
   // Projectile
   const [projectile, setProjectile] = useState<Projectile | null>(null);
