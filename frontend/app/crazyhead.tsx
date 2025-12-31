@@ -1118,19 +1118,15 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Floating Banner - above character during levels 1-29 ONLY - HIDDEN on reward screen */}
-      {gameState !== 'reward' && (
-        <>
-          {gameState !== 'setup' && currentLevel < TOTAL_LEVELS - 1 && (
-            <View style={styles.floatingBannerContainer} pointerEvents="none">
-              <Image 
-                source={REWARD_BANNER} 
-                style={styles.floatingBanner}
-                resizeMode="contain"
-              />
-            </View>
-          )}
-        </>
+      {/* Floating Banner - above character during levels 1-29 gameplay */}
+      {gameState !== 'reward' && gameState !== 'setup' && currentLevel < TOTAL_LEVELS - 1 && (
+        <View style={styles.floatingBannerContainer} pointerEvents="none">
+          <Image 
+            source={REWARD_BANNER} 
+            style={styles.floatingBanner}
+            resizeMode="contain"
+          />
+        </View>
       )}
 
       {/* Setup overlay (before head image is selected) */}
