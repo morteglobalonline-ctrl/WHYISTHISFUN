@@ -255,8 +255,11 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       base64: true,
     });
 
-    if (!result.canceled && result.assets[0].base64) {
-      setTempImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setTempImage(`data:image/jpeg;base64,${asset.base64}`);
+      setTempImageUri(asset.uri);
+      setTempImageSize({ width: asset.width || 500, height: asset.height || 500 });
       setTempFocusPoint({ x: 0.5, y: 0.5 });
       setShowFocusSelector(true);
     }
