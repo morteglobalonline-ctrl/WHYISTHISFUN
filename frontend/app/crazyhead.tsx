@@ -195,7 +195,8 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   // Game state
   // TEMP: Force Level 30 for screenshot
   const [currentLevel, setCurrentLevel] = useState(29);
-  const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'reward'>('setup');
+  // TEMP: Force reward screen for screenshot
+  const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'reward'>('reward');
   const [headshots, setHeadshots] = useState(0);
   const [selectedItemId, setSelectedItemId] = useState<string>('poop');
 
