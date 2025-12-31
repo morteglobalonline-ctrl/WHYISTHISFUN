@@ -1470,15 +1470,15 @@ const styles = StyleSheet.create({
   // Floating banner above character (levels 1-29)
   floatingBannerContainer: {
     position: 'absolute',
-    top: 100,
+    top: '20%', // Position above the character's head (character is at ~45%)
     left: 0,
     right: 0,
     alignItems: 'center',
     zIndex: 10,
   },
   floatingBanner: {
-    width: '85%',
-    height: 80,
+    width: '62%', // ~60-65% screen width
+    height: 55,
   },
   // Reward screen styles
   rewardOverlay: {
