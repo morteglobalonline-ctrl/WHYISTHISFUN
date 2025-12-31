@@ -569,7 +569,7 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
     setTimeout(() => {
       nextLevel();
     }, 2000);
-  }, []);
+  }, [nextLevel]);
 
   const handleFail = useCallback(() => {
     setGameState('fail');
