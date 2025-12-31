@@ -579,7 +579,7 @@ export default function DumpItGame({ onBack }: DumpItGameProps) {
     setTimeout(() => {
       restartLevel();
     }, 1500);
-  }, []);
+  }, [restartLevel]);
 
   const restartLevel = useCallback(() => {
     setActivePatty(null);
