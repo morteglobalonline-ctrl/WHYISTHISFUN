@@ -193,7 +193,8 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const DEBUG_SHOW_HITBOX = false;
 
   // Game state
-  const [currentLevel, setCurrentLevel] = useState(0);
+  // Force Level 30 for screenshot (TEMPORARY - REMOVE AFTER APPROVAL)
+  const [currentLevel, setCurrentLevel] = useState(29); // Start at level 30 (index 29)
   const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'reward'>('setup');
   const [headshots, setHeadshots] = useState(0);
   const [selectedItemId, setSelectedItemId] = useState<string>('poop');
