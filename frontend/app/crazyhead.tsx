@@ -1118,10 +1118,14 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Hint text - subtle teaser before Level 30 */}
-      {(gameState === 'ready' || gameState === 'aiming' || gameState === 'flying') && currentLevel < TOTAL_LEVELS - 1 && (
-        <View style={styles.hintContainer} pointerEvents="none">
-          <Text style={styles.hintText}>Wait for the surprise…</Text>
+      {/* Floating Banner - above character during levels 1-29 */}
+      {(gameState === 'ready' || gameState === 'aiming' || gameState === 'flying' || gameState === 'win' || gameState === 'fail') && currentLevel < TOTAL_LEVELS - 1 && (
+        <View style={styles.floatingBannerContainer} pointerEvents="none">
+          <Image 
+            source={REWARD_BANNER} 
+            style={styles.floatingBanner}
+            resizeMode="contain"
+          />
         </View>
       )}
 
