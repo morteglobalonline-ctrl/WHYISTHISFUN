@@ -1157,9 +1157,19 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
             )}
           </View>
 
-          <TouchableOpacity style={styles.confirmButton} onPress={confirmFocusPoint}>
-            <Ionicons name="checkmark" size={24} color="white" />
-            <Text style={styles.confirmButtonText}>Confirm Selection</Text>
+          <TouchableOpacity 
+            style={[styles.confirmButton, isCropping && { opacity: 0.7 }]} 
+            onPress={confirmFocusPoint}
+            disabled={isCropping}
+          >
+            {isCropping ? (
+              <Text style={styles.confirmButtonText}>Cropping...</Text>
+            ) : (
+              <>
+                <Ionicons name="checkmark" size={24} color="white" />
+                <Text style={styles.confirmButtonText}>Confirm Selection</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>
