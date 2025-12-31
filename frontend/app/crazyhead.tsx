@@ -1180,14 +1180,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       {/* Reward Screen Overlay - After Level 30 */}
       {gameState === 'reward' && (
         <View style={styles.rewardOverlay}>
-          {/* Banner at top */}
-          <Image 
-            source={REWARD_BANNER} 
-            style={styles.rewardBanner}
-            resizeMode="contain"
-          />
-          
-          {/* Reward Image */}
+          {/* Reward Image - Main focal point */}
           <Image 
             source={REWARD_TSHIRT} 
             style={styles.rewardImage}
