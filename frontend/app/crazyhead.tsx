@@ -1459,33 +1459,55 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  comingSoonOverlay: {
+  // Hint text during gameplay
+  hintContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  hintText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 14,
+    fontStyle: 'italic',
+    letterSpacing: 0.5,
+  },
+  // Reward screen styles
+  rewardOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.97)',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 30,
+    padding: 20,
+    paddingTop: 60,
   },
-  comingSoonTitle: {
-    fontSize: 36,
-    fontWeight: 'bold',
+  rewardBanner: {
+    width: '100%',
+    height: 100,
+    marginBottom: 20,
+  },
+  rewardImage: {
+    width: 280,
+    height: 280,
+    borderRadius: 20,
+    marginBottom: 24,
+  },
+  rewardText: {
+    fontSize: 20,
+    fontWeight: '600',
     color: '#333',
-    marginTop: 20,
-  },
-  comingSoonSubtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 10,
     textAlign: 'center',
+    marginBottom: 30,
+    paddingHorizontal: 20,
   },
-  backToMenuButton: {
+  rewardButton: {
     backgroundColor: '#FF5722',
     paddingVertical: 16,
-    paddingHorizontal: 40,
+    paddingHorizontal: 50,
     borderRadius: 30,
-    marginTop: 40,
   },
-  backToMenuText: {
+  rewardButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
