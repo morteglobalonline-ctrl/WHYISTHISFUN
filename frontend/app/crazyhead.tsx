@@ -15,6 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import Svg, { Path, Circle, Rect, G, Ellipse, Line, Polygon, Defs, ClipPath, Image as SvgImage, Pattern } from 'react-native-svg';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
