@@ -445,7 +445,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
     // Create persistent effect for items that stick (poop, patty, phone crack)
     if (item.sticks || item.hitEffect === 'crack') {
       setHitEffects(prev => [...prev, {
-        id: Date.now().toString(),
+        id: `effect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: item.hitEffect,
         x: (p.x - headX) * 0.5, // Position relative to head center
         y: (p.y - headY) * 0.5,
