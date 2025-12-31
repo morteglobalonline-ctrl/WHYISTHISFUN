@@ -1166,14 +1166,31 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </View>
       )}
 
-      {/* Coming Soon Overlay - After Level 30 */}
-      {gameState === 'comingSoon' && (
-        <View style={styles.comingSoonOverlay}>
-          <MaterialCommunityIcons name="rocket-launch" size={80} color="#FF5722" />
-          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
-          <Text style={styles.comingSoonSubtitle}>New levels are on the way.</Text>
-          <TouchableOpacity style={styles.backToMenuButton} onPress={onBack}>
-            <Text style={styles.backToMenuText}>Back to Menu</Text>
+      {/* Reward Screen Overlay - After Level 30 */}
+      {gameState === 'reward' && (
+        <View style={styles.rewardOverlay}>
+          {/* Banner at top */}
+          <Image 
+            source={REWARD_BANNER} 
+            style={styles.rewardBanner}
+            resizeMode="contain"
+          />
+          
+          {/* Reward Image */}
+          <Image 
+            source={REWARD_TSHIRT} 
+            style={styles.rewardImage}
+            resizeMode="contain"
+          />
+          
+          {/* Reward Text */}
+          <Text style={styles.rewardText}>
+            You've won a free T-shirt from The Ndop!
+          </Text>
+          
+          {/* Back to Menu Button */}
+          <TouchableOpacity style={styles.rewardButton} onPress={onBack}>
+            <Text style={styles.rewardButtonText}>Back to Menu</Text>
           </TouchableOpacity>
         </View>
       )}
