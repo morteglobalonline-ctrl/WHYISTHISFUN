@@ -538,8 +538,8 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       setAimEnd(null);
       setGameState('ready');
     } else {
-      // Completed all 30 levels - show Coming Soon
-      setGameState('comingSoon');
+      // Completed all 30 levels - show reward screen
+      setGameState('reward');
     }
   }, [currentLevel]);
 
