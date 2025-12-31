@@ -1476,17 +1476,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 60,
-  },
-  rewardBanner: {
-    width: '100%',
-    height: 100,
-    marginBottom: 20,
+    paddingTop: 80,
   },
   rewardImage: {
-    width: 280,
-    height: 280,
-    borderRadius: 20,
+    width: '85%',
+    height: undefined,
+    aspectRatio: 1,
+    borderRadius: 16,
     marginBottom: 24,
   },
   rewardText: {
