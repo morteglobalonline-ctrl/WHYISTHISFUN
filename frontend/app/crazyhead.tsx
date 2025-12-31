@@ -1463,19 +1463,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  // Hint text during gameplay
-  hintContainer: {
+  // Floating banner above character (levels 1-29)
+  floatingBannerContainer: {
     position: 'absolute',
-    bottom: 100,
+    top: 100,
     left: 0,
     right: 0,
     alignItems: 'center',
+    zIndex: 10,
   },
-  hintText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
-    fontStyle: 'italic',
-    letterSpacing: 0.5,
+  floatingBanner: {
+    width: '85%',
+    height: 80,
   },
   // Reward screen styles
   rewardOverlay: {
