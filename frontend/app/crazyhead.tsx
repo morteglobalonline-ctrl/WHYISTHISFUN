@@ -1724,7 +1724,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  // Floating banner above character (levels 1-29)
+  // Floating banner above character (levels 1-99)
   floatingBannerContainer: {
     position: 'absolute',
     top: '20%', // Position above the character's head (character is at ~45%)
