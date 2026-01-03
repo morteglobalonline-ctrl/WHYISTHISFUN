@@ -53,6 +53,7 @@ const MAX_ARROW_LENGTH = 160;
 const LAUNCH_POWER_MULTIPLIER = 0.22;
 
 // Level configurations - Extended to 30 levels
+// Level configurations - Extended to 100 levels
 const LEVEL_CONFIGS = [
   { required: 2 },   // Level 1
   { required: 3 },   // Level 2
@@ -84,6 +85,83 @@ const LEVEL_CONFIGS = [
   { required: 9 },   // Level 28
   { required: 10 },  // Level 29
   { required: 12 },  // Level 30
+  // Levels 31-40: Moderate difficulty
+  { required: 7 },   // Level 31
+  { required: 8 },   // Level 32
+  { required: 9 },   // Level 33
+  { required: 10 },  // Level 34
+  { required: 11 },  // Level 35
+  { required: 8 },   // Level 36
+  { required: 9 },   // Level 37
+  { required: 10 },  // Level 38
+  { required: 11 },  // Level 39
+  { required: 13 },  // Level 40
+  // Levels 41-50: Increasing challenge
+  { required: 8 },   // Level 41
+  { required: 9 },   // Level 42
+  { required: 10 },  // Level 43
+  { required: 11 },  // Level 44
+  { required: 12 },  // Level 45
+  { required: 9 },   // Level 46
+  { required: 10 },  // Level 47
+  { required: 11 },  // Level 48
+  { required: 12 },  // Level 49
+  { required: 14 },  // Level 50
+  // Levels 51-60: Higher difficulty
+  { required: 9 },   // Level 51
+  { required: 10 },  // Level 52
+  { required: 11 },  // Level 53
+  { required: 12 },  // Level 54
+  { required: 13 },  // Level 55
+  { required: 10 },  // Level 56
+  { required: 11 },  // Level 57
+  { required: 12 },  // Level 58
+  { required: 13 },  // Level 59
+  { required: 15 },  // Level 60
+  // Levels 61-70: Advanced
+  { required: 10 },  // Level 61
+  { required: 11 },  // Level 62
+  { required: 12 },  // Level 63
+  { required: 13 },  // Level 64
+  { required: 14 },  // Level 65
+  { required: 11 },  // Level 66
+  { required: 12 },  // Level 67
+  { required: 13 },  // Level 68
+  { required: 14 },  // Level 69
+  { required: 16 },  // Level 70
+  // Levels 71-80: Expert
+  { required: 11 },  // Level 71
+  { required: 12 },  // Level 72
+  { required: 13 },  // Level 73
+  { required: 14 },  // Level 74
+  { required: 15 },  // Level 75
+  { required: 12 },  // Level 76
+  { required: 13 },  // Level 77
+  { required: 14 },  // Level 78
+  { required: 15 },  // Level 79
+  { required: 17 },  // Level 80
+  // Levels 81-90: Master
+  { required: 12 },  // Level 81
+  { required: 13 },  // Level 82
+  { required: 14 },  // Level 83
+  { required: 15 },  // Level 84
+  { required: 16 },  // Level 85
+  { required: 13 },  // Level 86
+  { required: 14 },  // Level 87
+  { required: 15 },  // Level 88
+  { required: 16 },  // Level 89
+  { required: 18 },  // Level 90
+  // Levels 91-100: Ultimate
+  { required: 13 },  // Level 91
+  { required: 14 },  // Level 92
+  { required: 15 },  // Level 93
+  { required: 16 },  // Level 94
+  { required: 17 },  // Level 95
+  { required: 14 },  // Level 96
+  { required: 15 },  // Level 97
+  { required: 16 },  // Level 98
+  { required: 18 },  // Level 99
+  { required: 20 },  // Level 100 - Final challenge!
 ];
 
 // Crazy Head specific items with hit effects
