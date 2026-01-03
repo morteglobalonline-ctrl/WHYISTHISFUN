@@ -281,6 +281,55 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'reward'>('setup');
   const [headshots, setHeadshots] = useState(0);
   const [selectedItemId, setSelectedItemId] = useState<string>('poop');
+  const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const [savedLevel, savedReward] = await Promise.all([
+          AsyncStorage.getItem(CRAZY_HEAD_PROGRESS_KEY),
+          AsyncStorage.getItem(CRAZY_HEAD_REWARD_KEY),
+        ]);
+        
+        if (savedLevel !== null) {
+          const level = parseInt(savedLevel, 10);
+          if (!isNaN(level) && level >= 0 && level < TOTAL_LEVELS) {
+            setCurrentLevel(level);
+          }
+        }
+        
+        if (savedReward === 'true') {
+          setRewardClaimed(true);
+        }
+      } catch (error) {
+        console.log('Failed to load progress:', error);
+      } finally {
+        setIsLoadingProgress(false);
+      }
+    };
+    loadProgress();
+  }, []);
+
+  // Save progress when level changes
+  const saveProgress = useCallback(async (level: number) => {
+    try {
+      await AsyncStorage.setItem(CRAZY_HEAD_PROGRESS_KEY, level.toString());
+    } catch (error) {
+      console.log('Failed to save progress:', error);
+    }
+  }, []);
+
+  // Save reward claimed status
+  const saveRewardClaimed = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(CRAZY_HEAD_REWARD_KEY, 'true');
+      setRewardClaimed(true);
+    } catch (error) {
+      console.log('Failed to save reward status:', error);
+    }
+  }, []);
 
   // Head customization
   const [headImage, setHeadImage] = useState<string | null>(null);
