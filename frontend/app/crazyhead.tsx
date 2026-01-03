@@ -1427,9 +1427,13 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </View>
       )}
 
-      {/* Reward Screen Overlay - After Level 30 */}
+      {/* Reward Screen Overlay - After Level 100 */}
       {gameState === 'reward' && (
         <View style={styles.rewardOverlay}>
+          {/* Congratulations Title */}
+          <Text style={styles.rewardTitle}>🎉 You did it! 🎉</Text>
+          <Text style={styles.rewardSubtitle}>You beat all 100 levels.</Text>
+          
           {/* Reward Image - Main focal point */}
           <Image 
             source={REWARD_TSHIRT} 
@@ -1442,10 +1446,24 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
             You've won a free T-shirt from The Ndop!
           </Text>
           
-          {/* Back to Menu Button */}
-          <TouchableOpacity style={styles.rewardButton} onPress={onBack}>
-            <Text style={styles.rewardButtonText}>Back to Menu</Text>
+          {/* Claim Reward / Back to Menu Button */}
+          <TouchableOpacity 
+            style={styles.rewardButton} 
+            onPress={() => {
+              if (!rewardClaimed) {
+                saveRewardClaimed();
+              }
+              onBack();
+            }}
+          >
+            <Text style={styles.rewardButtonText}>
+              {rewardClaimed ? 'Back to Menu' : 'Claim Reward'}
+            </Text>
           </TouchableOpacity>
+          
+          {rewardClaimed && (
+            <Text style={styles.rewardClaimedText}>✓ Reward already claimed</Text>
+          )}
         </View>
       )}
 
