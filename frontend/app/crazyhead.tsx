@@ -276,9 +276,9 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   // Debug toggle (set to true to see hitbox)
   const DEBUG_SHOW_HITBOX = false;
 
-  // Game state
-  const [currentLevel, setCurrentLevel] = useState(0);
-  const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'reward'>('setup');
+  // Game state - TEMP: Start at level 99 to test reward
+  const [currentLevel, setCurrentLevel] = useState(99);
+  const [gameState, setGameState] = useState<'setup' | 'ready' | 'aiming' | 'flying' | 'win' | 'fail' | 'reward'>('reward'); // TEMP
   const [headshots, setHeadshots] = useState(0);
   const [selectedItemId, setSelectedItemId] = useState<string>('poop');
   const [rewardClaimed, setRewardClaimed] = useState(false);
