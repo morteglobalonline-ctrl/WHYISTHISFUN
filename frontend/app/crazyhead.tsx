@@ -18,6 +18,11 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Storage keys
+const CRAZY_HEAD_REWARD_KEY = 'crazyHead_rewardClaimed';
+const CRAZY_HEAD_PROGRESS_KEY = 'crazyHead_currentLevel';
 
 // Reward images (placeholders until final assets provided)
 // Expected: reward_banner.png (800x200), reward_tshirt.png (600x600)
