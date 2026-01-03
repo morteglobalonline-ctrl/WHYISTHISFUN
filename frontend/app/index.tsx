@@ -13,9 +13,9 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Import game icons
+// Import game icons (Dump It disabled for App Store review)
 const GameIcons = {
-  dumpit: require('../assets/icons/icon_dumpit.png'),
+  // dumpit: require('../assets/icons/icon_dumpit.png'), // DISABLED
   crazyhead: require('../assets/icons/icon_crazyhead.png'),
   toiletchaos: require('../assets/icons/icon_toiletchaos.png'),
   flushit: require('../assets/icons/icon_flushit.png'),
