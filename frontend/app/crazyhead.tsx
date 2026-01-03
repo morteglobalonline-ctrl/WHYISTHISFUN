@@ -255,7 +255,7 @@ interface CrazyHeadGameProps {
   onBack: () => void;
 }
 
-const TOTAL_LEVELS = 30;
+const TOTAL_LEVELS = 100;
 
 export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
