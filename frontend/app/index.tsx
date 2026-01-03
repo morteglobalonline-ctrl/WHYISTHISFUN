@@ -110,7 +110,8 @@ export default function MainMenu() {
 
         {/* Game Cards */}
         <View style={styles.gamesContainer}>
-          {/* Dump It Game Card */}
+          {/* Dump It Game Card - DISABLED FOR APP STORE REVIEW */}
+          {/* 
           <TouchableOpacity
             style={styles.gameCard}
             onPress={() => setCurrentScreen('dumpit')}
@@ -135,6 +136,7 @@ export default function MainMenu() {
             </View>
             <Ionicons name="chevron-forward" size={28} color="rgba(0,0,0,0.25)" />
           </TouchableOpacity>
+          */}
 
           {/* Crazy Head Game Card */}
           <TouchableOpacity
