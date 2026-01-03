@@ -63,10 +63,10 @@ export default function MainMenu() {
     return () => pulse.stop();
   }, [pulseAnim]);
 
-  // Render the selected game
-  if (currentScreen === 'dumpit') {
-    return <DumpItGame onBack={() => setCurrentScreen('menu')} />;
-  }
+  // Render the selected game (Dump It disabled for App Store review)
+  // if (currentScreen === 'dumpit') {
+  //   return <DumpItGame onBack={() => setCurrentScreen('menu')} />;
+  // }
 
   if (currentScreen === 'crazyhead') {
     return <CrazyHeadGame onBack={() => setCurrentScreen('menu')} />;
