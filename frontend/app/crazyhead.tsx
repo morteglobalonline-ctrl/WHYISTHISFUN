@@ -759,7 +759,9 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
   // Next level
   const nextLevel = useCallback(() => {
     if (currentLevel < TOTAL_LEVELS - 1) {
-      setCurrentLevel(currentLevel + 1);
+      const newLevel = currentLevel + 1;
+      setCurrentLevel(newLevel);
+      saveProgress(newLevel); // Save progress
       setHeadshots(0);
       headshotsRef.current = 0;
       setProjectile(null);
@@ -771,10 +773,15 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
       setAimEnd(null);
       setGameState('ready');
     } else {
-      // Completed all 30 levels - show reward screen
-      setGameState('reward');
+      // Completed Level 100 - show reward screen (only if not already claimed)
+      if (!rewardClaimed) {
+        setGameState('reward');
+      } else {
+        // Reward already claimed - just show a completion message
+        setGameState('reward');
+      }
     }
-  }, [currentLevel]);
+  }, [currentLevel, saveProgress, rewardClaimed]);
 
   // Touch handlers
   const isInLauncherArea = useCallback((x: number, y: number) => {
