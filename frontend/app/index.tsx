@@ -25,14 +25,15 @@ const GameIcons = {
 // Import header logo
 const HeaderLogo = require('../assets/header_logo.png');
 
-// Import game components
-import DumpItGame from './dumpit';
+// Import game components (Dump It disabled for App Store review)
+// import DumpItGame from './dumpit'; // DISABLED
 import CrazyHeadGame from './crazyhead';
 import ToiletChaosGame from './toiletchaos';
 import FlushItGame from './flushit';
 import DeadeyeGame from './deadeye';
 
-type GameScreen = 'menu' | 'dumpit' | 'crazyhead' | 'toiletchaos' | 'flushit' | 'deadeye';
+// Game screen types (Dump It disabled)
+type GameScreen = 'menu' | 'crazyhead' | 'toiletchaos' | 'flushit' | 'deadeye';
 
 export default function MainMenu() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
