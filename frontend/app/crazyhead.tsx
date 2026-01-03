@@ -1368,7 +1368,7 @@ export default function CrazyHeadGame({ onBack }: CrazyHeadGameProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Floating Banner - above character during levels 1-29 gameplay */}
+      {/* Floating Banner - above character during levels 1-99 gameplay */}
       {gameState !== 'reward' && gameState !== 'setup' && currentLevel < TOTAL_LEVELS - 1 && (
         <View style={styles.floatingBannerContainer} pointerEvents="none">
           <Image 
